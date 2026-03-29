@@ -6,6 +6,7 @@ import RegisterPage from './features/auth/RegisterPage';
 import ProfilePage from './features/auth/ProfilePage';
 import SongListPage from './features/songs/SongListPage';
 import SongViewPage from './features/songs/SongViewPage';
+import EditorPage from './features/editor/EditorPage';
 
 export default function App() {
   return (
@@ -13,14 +14,8 @@ export default function App() {
       <Route element={<Layout />}>
         <Route path="/" element={<SongListPage />} />
         <Route path="/song/:id" element={<SongViewPage />} />
-        <Route
-          path="/song/:id/edit"
-          element={<ProtectedRoute><div>Edit Song (Task 10)</div></ProtectedRoute>}
-        />
-        <Route
-          path="/new"
-          element={<ProtectedRoute><div>New Song (Task 10)</div></ProtectedRoute>}
-        />
+        <Route path="/song/:id/edit" element={<ProtectedRoute><EditorPage /></ProtectedRoute>} />
+        <Route path="/new" element={<ProtectedRoute><EditorPage /></ProtectedRoute>} />
         <Route path="/login" element={<LoginPage />} />
         <Route path="/register" element={<RegisterPage />} />
         <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
