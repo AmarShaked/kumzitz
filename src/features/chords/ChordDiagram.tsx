@@ -25,10 +25,9 @@ export default function ChordDiagram({ chord, width = 160 }: ChordDiagramProps) 
         titleColor: '#60a5fa',
         stringColor: '#64748b',
         fretColor: '#64748b',
-        nutColor: '#e2e8f0',
         fingerColor: '#3b82f6',
         barreChordRadius: 0.3,
-      });
+      } as any);
 
     chart.draw();
   }, [chord]);
