@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useSong, useDeleteSong } from './hooks/useSongs';
 import SongRenderer from '../../components/SongRenderer';
+import TransposeControls from '../transpose/TransposeControls';
+import { useChordTooltip, ChordTooltipOverlay } from '../chords/ChordTooltip';
 import { pb } from '../../services/pocketbase';
 
 export default function SongViewPage() {
@@ -10,6 +12,7 @@ export default function SongViewPage() {
   const { data: song, isLoading, error } = useSong(id!);
   const { mutateAsync: removeSong } = useDeleteSong();
   const [transpose, setTranspose] = useState(0);
+  const { tooltip, onChordHover, onChordLeave } = useChordTooltip();
 
   if (isLoading) return <p className="p-8 text-center text-gray-400">טוען...</p>;
   if (error || !song) return <p className="p-8 text-center text-red-400">השיר לא נמצא</p>;
@@ -66,20 +69,16 @@ export default function SongViewPage() {
       </div>
 
       <div className="flex items-center gap-4 print:hidden">
-        <div className="flex items-center gap-2">
-          <button onClick={() => setTranspose(t => t - 1)} className="rounded bg-gray-700 w-8 h-8 flex items-center justify-center hover:bg-gray-600 text-lg font-bold">-</button>
-          <span className="text-sm text-gray-300 min-w-[40px] text-center">{transpose !== 0 ? (transpose > 0 ? `+${transpose}` : transpose) : '0'}</span>
-          <button onClick={() => setTranspose(t => t + 1)} className="rounded bg-gray-700 w-8 h-8 flex items-center justify-center hover:bg-gray-600 text-lg font-bold">+</button>
-          {transpose !== 0 && <button onClick={() => setTranspose(0)} className="text-xs text-gray-500 hover:text-gray-300">איפוס</button>}
-        </div>
+        <TransposeControls transpose={transpose} onTransposeChange={setTranspose} originalKey={song.originalKey} />
         <button onClick={handleExportJson} className="rounded bg-gray-700 px-3 py-1 text-sm hover:bg-gray-600">ייצוא JSON</button>
         <button onClick={handleExportChordPro} className="rounded bg-gray-700 px-3 py-1 text-sm hover:bg-gray-600">ייצוא ChordPro</button>
         <button onClick={() => window.print()} className="rounded bg-gray-700 px-3 py-1 text-sm hover:bg-gray-600">הדפסה</button>
       </div>
 
       <div className="rounded-lg bg-gray-900 p-6">
-        <SongRenderer content={song.content} transpose={transpose} />
+        <SongRenderer content={song.content} transpose={transpose} onChordHover={onChordHover} onChordLeave={onChordLeave} />
       </div>
+      <ChordTooltipOverlay tooltip={tooltip} />
     </div>
   );
 }
