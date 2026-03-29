@@ -5,6 +5,7 @@ import SongRenderer from '../../components/SongRenderer';
 import TransposeControls from '../transpose/TransposeControls';
 import { useChordTooltip, ChordTooltipOverlay } from '../chords/ChordTooltip';
 import { pb } from '../../services/pocketbase';
+import PerformanceMode from '../performance/PerformanceMode';
 
 export default function SongViewPage() {
   const { id } = useParams<{ id: string }>();
@@ -13,6 +14,7 @@ export default function SongViewPage() {
   const { mutateAsync: removeSong } = useDeleteSong();
   const [transpose, setTranspose] = useState(0);
   const { tooltip, onChordHover, onChordLeave } = useChordTooltip();
+  const [performanceMode, setPerformanceMode] = useState(false);
 
   if (isLoading) return <p className="p-8 text-center text-gray-400">טוען...</p>;
   if (error || !song) return <p className="p-8 text-center text-red-400">השיר לא נמצא</p>;
@@ -48,6 +50,15 @@ export default function SongViewPage() {
   };
 
   return (
+    <>
+    {performanceMode && (
+      <PerformanceMode
+        title={song.title}
+        content={song.content}
+        originalKey={song.originalKey}
+        onExit={() => setPerformanceMode(false)}
+      />
+    )}
     <div className="mx-auto max-w-3xl p-6 space-y-6">
       <div className="flex items-start justify-between">
         <div>
@@ -73,6 +84,7 @@ export default function SongViewPage() {
         <button onClick={handleExportJson} className="rounded bg-gray-700 px-3 py-1 text-sm hover:bg-gray-600">ייצוא JSON</button>
         <button onClick={handleExportChordPro} className="rounded bg-gray-700 px-3 py-1 text-sm hover:bg-gray-600">ייצוא ChordPro</button>
         <button onClick={() => window.print()} className="rounded bg-gray-700 px-3 py-1 text-sm hover:bg-gray-600">הדפסה</button>
+        <button onClick={() => setPerformanceMode(true)} className="rounded bg-gray-700 px-3 py-1 text-sm hover:bg-gray-600">מצב הופעה</button>
       </div>
 
       <div className="rounded-lg bg-gray-900 p-6">
@@ -80,5 +92,6 @@ export default function SongViewPage() {
       </div>
       <ChordTooltipOverlay tooltip={tooltip} />
     </div>
+    </>
   );
 }
