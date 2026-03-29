@@ -5,3 +5,33 @@
 @theme {
   --font-heebo: 'Heebo', sans-serif;
 }
+
+@media print {
+  body {
+    background: white !important;
+    color: black !important;
+  }
+
+  nav,
+  .print\:hidden,
+  button,
+  input,
+  select {
+    display: none !important;
+  }
+
+  .song-content {
+    font-size: 14pt !important;
+    line-height: 2 !important;
+  }
+
+  .song-content span.text-blue-400 {
+    color: black !important;
+    font-weight: bold !important;
+  }
+
+  @page {
+    size: A4;
+    margin: 2cm;
+  }
+}
