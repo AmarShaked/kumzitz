@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useSongList, useCreateSong } from './hooks/useSongs';
 import SongCard from './SongCard';
 import { parseDirectives } from '../../lib/chordpro';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import type { Song } from '../../types/song';
 
 export default function SongListPage() {
@@ -47,22 +49,22 @@ export default function SongListPage() {
 
   return (
     <div className="mx-auto max-w-3xl p-6 space-y-6">
-      <input type="search" placeholder="חפש שיר או אמן..."
+      <Input type="search" placeholder="חפש שיר או אמן..."
         value={search} onChange={(e) => setSearch(e.target.value)}
-        className="w-full rounded-lg bg-gray-800 px-4 py-3 text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500" />
+        className="h-12" />
       <div className="flex gap-2">
         <input ref={jsonInputRef} type="file" accept=".json" onChange={handleImportJson} className="hidden" />
         <input ref={chordproInputRef} type="file" accept=".chordpro,.cho,.crd" onChange={handleImportChordPro} className="hidden" />
-        <button onClick={() => jsonInputRef.current?.click()} className="rounded bg-gray-700 px-3 py-2 text-sm hover:bg-gray-600">ייבוא JSON</button>
-        <button onClick={() => chordproInputRef.current?.click()} className="rounded bg-gray-700 px-3 py-2 text-sm hover:bg-gray-600">ייבוא ChordPro</button>
+        <Button variant="secondary" size="sm" onClick={() => jsonInputRef.current?.click()}>ייבוא JSON</Button>
+        <Button variant="secondary" size="sm" onClick={() => chordproInputRef.current?.click()}>ייבוא ChordPro</Button>
       </div>
-      {isLoading && <p className="text-center text-gray-400">טוען...</p>}
-      {error && <p className="text-center text-red-400">שגיאה בטעינת שירים</p>}
+      {isLoading && <p className="text-center text-muted-foreground">טוען...</p>}
+      {error && <p className="text-center text-destructive">שגיאה בטעינת שירים</p>}
       <div className="grid gap-3">
         {data?.items.map((song) => <SongCard key={song.id} song={song} />)}
       </div>
       {data?.items.length === 0 && !isLoading && (
-        <p className="text-center text-gray-500">לא נמצאו שירים</p>
+        <p className="text-center text-muted-foreground">לא נמצאו שירים</p>
       )}
     </div>
   );

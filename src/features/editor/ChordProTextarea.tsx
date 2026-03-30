@@ -29,7 +29,7 @@ export default function ChordProTextarea() {
       onSelect={handleSelect}
       dir="rtl"
       placeholder={"הקלד מילים עם אקורדים בפורמט ChordPro...\nדוגמה: [G]שלום [D]עולם"}
-      className="w-full h-full min-h-[400px] bg-gray-900 p-4 font-mono text-sm text-gray-100 placeholder-gray-600 resize-none focus:outline-none"
+      className="w-full h-full min-h-[400px] bg-muted/30 p-4 font-mono text-sm text-foreground placeholder:text-muted-foreground resize-none focus:outline-none"
     />
   );
 }

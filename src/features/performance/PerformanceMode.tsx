@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import SongRenderer from '../../components/SongRenderer';
 import TransposeControls from '../transpose/TransposeControls';
+import { Button } from '@/components/ui/button';
 
 type PerformanceModeProps = {
   title: string;
@@ -56,31 +57,33 @@ export default function PerformanceMode({ title, content, originalKey, onExit }:
   }, [onExit]);
 
   return (
-    <div className="fixed inset-0 z-50 bg-gray-950 flex flex-col">
-      <div className="flex items-center justify-between px-6 py-3 bg-gray-900 border-b border-gray-800 shrink-0">
+    <div className="fixed inset-0 z-50 bg-background flex flex-col">
+      <div className="flex items-center justify-between px-6 py-3 bg-card border-b border-border shrink-0">
         <h2 className="text-xl font-bold">{title}</h2>
         <div className="flex items-center gap-4">
           <TransposeControls transpose={transpose} onTransposeChange={setTranspose} originalKey={originalKey} />
           <div className="flex items-center gap-1">
-            <button onClick={() => setFontSize((s) => Math.max(14, s - 2))}
-              className="rounded bg-gray-700 w-8 h-8 flex items-center justify-center hover:bg-gray-600 text-sm">א-</button>
-            <button onClick={() => setFontSize((s) => Math.min(48, s + 2))}
-              className="rounded bg-gray-700 w-8 h-8 flex items-center justify-center hover:bg-gray-600 text-sm">א+</button>
+            <Button variant="secondary" size="icon" className="w-8 h-8"
+              onClick={() => setFontSize((s) => Math.max(14, s - 2))}>א-</Button>
+            <Button variant="secondary" size="icon" className="w-8 h-8"
+              onClick={() => setFontSize((s) => Math.min(48, s + 2))}>א+</Button>
           </div>
           <div className="flex items-center gap-2">
-            <button onClick={() => {
+            <Button
+              variant={isScrolling ? 'success' : 'secondary'}
+              size="sm"
+              onClick={() => {
                 if (isScrolling) { setIsScrolling(false); }
                 else { setIsScrolling(true); if (scrollSpeed === 0) setScrollSpeed(1); }
-              }}
-              className={`rounded px-3 py-1 text-sm ${isScrolling ? 'bg-green-600' : 'bg-gray-700 hover:bg-gray-600'}`}>
+              }}>
               {isScrolling ? 'עצור' : 'גלילה'}
-            </button>
+            </Button>
             {isScrolling && (
               <input type="range" min="0.5" max="5" step="0.5" value={scrollSpeed}
                 onChange={(e) => setScrollSpeed(Number(e.target.value))} className="w-20" />
             )}
           </div>
-          <button onClick={onExit} className="rounded bg-red-800 px-3 py-1 text-sm hover:bg-red-700">יציאה</button>
+          <Button variant="destructive" size="sm" onClick={onExit}>יציאה</Button>
         </div>
       </div>
       <div ref={containerRef} className="flex-1 overflow-auto p-8">

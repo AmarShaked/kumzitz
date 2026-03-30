@@ -151,9 +151,21 @@ const songsCollection = {
       name: 'author',
       type: 'relation',
       required: true,
-      collectionId: '_pb_users_auth_',
+      collectionId: 'pbc_268561098',
       maxSelect: 1,
       cascadeDelete: false,
+    },
+    {
+      name: 'created',
+      type: 'autodate',
+      onCreate: true,
+      onUpdate: false,
+    },
+    {
+      name: 'updated',
+      type: 'autodate',
+      onCreate: true,
+      onUpdate: true,
     },
   ],
 

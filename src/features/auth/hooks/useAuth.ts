@@ -16,7 +16,7 @@ export function useAuth() {
 
   const loginMutation = useMutation({
     mutationFn: async ({ email, password }: { email: string; password: string }) => {
-      return pb.collection('users').authWithPassword(email, password);
+      return pb.collection('kumzitzUsers').authWithPassword(email, password);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['auth'] });
@@ -26,13 +26,13 @@ export function useAuth() {
 
   const registerMutation = useMutation({
     mutationFn: async ({ email, password, username }: { email: string; password: string; username: string }) => {
-      await pb.collection('users').create({
+      await pb.collection('kumzitzUsers').create({
         email,
         password,
         passwordConfirm: password,
         username,
       });
-      return pb.collection('users').authWithPassword(email, password);
+      return pb.collection('kumzitzUsers').authWithPassword(email, password);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['auth'] });

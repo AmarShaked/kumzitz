@@ -4,6 +4,7 @@ import EditorToolbar from './EditorToolbar';
 import ChordProTextarea from './ChordProTextarea';
 import EditorPreview from './EditorPreview';
 import { useSong, useCreateSong, useUpdateSong } from '../songs/hooks/useSongs';
+import { Button } from '@/components/ui/button';
 
 function EditorContent({ songId }: { songId?: string }) {
   const navigate = useNavigate();
@@ -36,15 +37,15 @@ function EditorContent({ songId }: { songId?: string }) {
     <div className="mx-auto max-w-6xl p-6 space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">{songId ? 'עריכת שיר' : 'שיר חדש'}</h1>
-        <button onClick={handleSave} disabled={isSaving || !state.title || !state.artist || !state.content}
-          className="rounded-lg bg-green-600 px-6 py-2 font-medium hover:bg-green-700 disabled:opacity-50">
+        <Button variant="success" onClick={handleSave} disabled={isSaving || !state.title || !state.artist || !state.content}>
           {isSaving ? 'שומר...' : 'שמור'}
-        </button>
+        </Button>
       </div>
       <EditorToolbar />
-      <div className="grid grid-cols-2 gap-4 rounded-lg border border-gray-700 overflow-hidden">
+      <div className="grid grid-cols-2 gap-4 rounded-lg border border-border overflow-hidden">
+      <ChordProTextarea />
+
         <EditorPreview />
-        <ChordProTextarea />
       </div>
     </div>
   );
@@ -54,7 +55,7 @@ export default function EditorPage() {
   const { id } = useParams<{ id: string }>();
   const { data: song, isLoading } = useSong(id ?? '');
 
-  if (id && isLoading) return <p className="p-8 text-center text-gray-400">טוען...</p>;
+  if (id && isLoading) return <p className="p-8 text-center text-muted-foreground">טוען...</p>;
 
   const initialState = song
     ? { title: song.title, artist: song.artist, content: song.content, originalKey: song.originalKey, bpm: song.bpm?.toString() ?? '', isPublic: song.isPublic }

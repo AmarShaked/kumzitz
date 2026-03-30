@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from './hooks/useAuth';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -17,19 +19,16 @@ export default function LoginPage() {
       <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-4">
         <h1 className="text-2xl font-bold text-center">התחברות</h1>
         {loginError && (
-          <p className="text-red-400 text-sm text-center">שם משתמש או סיסמה לא נכונים</p>
+          <p className="text-destructive text-sm text-center">שם משתמש או סיסמה לא נכונים</p>
         )}
-        <input type="email" placeholder="אימייל" value={email} onChange={(e) => setEmail(e.target.value)} required
-          className="w-full rounded-lg bg-gray-800 px-4 py-3 text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500" />
-        <input type="password" placeholder="סיסמה" value={password} onChange={(e) => setPassword(e.target.value)} required
-          className="w-full rounded-lg bg-gray-800 px-4 py-3 text-gray-100 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500" />
-        <button type="submit" disabled={isLoggingIn}
-          className="w-full rounded-lg bg-blue-600 py-3 font-medium hover:bg-blue-700 disabled:opacity-50">
+        <Input type="email" placeholder="אימייל" value={email} onChange={(e) => setEmail(e.target.value)} required />
+        <Input type="password" placeholder="סיסמה" value={password} onChange={(e) => setPassword(e.target.value)} required />
+        <Button type="submit" disabled={isLoggingIn} className="w-full">
           {isLoggingIn ? 'מתחבר...' : 'התחבר'}
-        </button>
-        <p className="text-center text-sm text-gray-400">
+        </Button>
+        <p className="text-center text-sm text-muted-foreground">
           אין לך חשבון?{' '}
-          <Link to="/register" className="text-blue-400 hover:underline">הרשמה</Link>
+          <Link to="/register" className="text-primary hover:underline">הרשמה</Link>
         </p>
       </form>
     </div>

@@ -26,7 +26,7 @@ export function ChordTooltipOverlay({ tooltip }: { tooltip: TooltipState }) {
   return (
     <div className="fixed z-50 pointer-events-none"
       style={{ left: tooltip.x - 80, top: tooltip.y - 200 }}>
-      <div className="bg-gray-800 rounded-lg border border-gray-600 shadow-xl p-2">
+      <div className="bg-popover rounded-lg border border-border shadow-xl p-2">
         <ChordDiagram chord={tooltip.chord} width={160} />
       </div>
     </div>

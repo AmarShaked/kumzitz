@@ -29,3 +29,41 @@ export function transposeSegments(segments: ChordSegment[], semitones: number): 
     text: seg.text,
   }));
 }
+
+/**
+ * Strip a chord down to its basic major or minor form.
+ * Cm7 → Cm, C7 → C, Csus4 → C, Cdim → Cm, Caug → C, C6 → C, etc.
+ */
+export function simplifyChord(chord: string): string {
+  const match = chord.match(CHORD_PARTS_REGEX);
+  if (!match) return chord;
+  const [, root, suffix] = match;
+  // Keep minor, treat dim as minor, strip everything else
+  const isMinor = /^m($|[^a])/.test(suffix) || suffix.startsWith('dim');
+  return root + (isMinor ? 'm' : '');
+}
+
+const EASY_CHORDS = new Set(['C', 'D', 'E', 'G', 'A', 'Am', 'Dm', 'Em']);
+
+/**
+ * Find the transposition (0–11) that maximizes the number of "easy" open chords
+ * after simplification.
+ */
+export function findEasiestTranspose(chords: string[]): number {
+  const simplified = chords.map(simplifyChord);
+  let bestTranspose = 0;
+  let bestScore = -1;
+
+  for (let t = 0; t < 12; t++) {
+    let score = 0;
+    for (const chord of simplified) {
+      if (EASY_CHORDS.has(transposeChord(chord, t))) score++;
+    }
+    if (score > bestScore) {
+      bestScore = score;
+      bestTranspose = t;
+    }
+  }
+
+  return bestTranspose;
+}

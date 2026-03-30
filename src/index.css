@@ -1,8 +1,123 @@
 @import url('https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700&display=swap');
 @import "tailwindcss";
 
-@theme {
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
   --font-heebo: 'Heebo', sans-serif;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chord: var(--chord);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+/*
+ * ── Palette tokens ──────────────────────────────────────────────
+ * Neutral Scandinavian palette.
+ * To change the site look-and-feel, swap these six hex values and
+ * the derived semantic variables below will follow automatically.
+ *
+ *   --palette-1  #c4bab2   warm mauve
+ *   --palette-2  #d9d7d0   light sage-gray
+ *   --palette-3  #d0c0af   warm sand
+ *   --palette-4  #9f8e7f   dark taupe (primary)
+ *   --palette-5  #a8a59a   olive-sage
+ *   --palette-6  #ceb89f   golden tan
+ */
+
+:root {
+  /* ── palette source ── */
+  --palette-1: #c4bab2;
+  --palette-2: #d9d7d0;
+  --palette-3: #d0c0af;
+  --palette-4: #9f8e7f;
+  --palette-5: #a8a59a;
+  --palette-6: #ceb89f;
+
+  --radius: 0.5rem;
+
+  /* ── semantic mapping (light) ── */
+  --background: #f5f2ed;
+  --foreground: #3d3530;
+  --card: #ffffff;
+  --card-foreground: #3d3530;
+  --popover: #ffffff;
+  --popover-foreground: #3d3530;
+  --primary: var(--palette-4);         /* #9f8e7f — dark taupe */
+  --primary-foreground: #ffffff;
+  --secondary: var(--palette-2);       /* #d9d7d0 — light sage-gray */
+  --secondary-foreground: #3d3530;
+  --muted: var(--palette-2);           /* #d9d7d0 */
+  --muted-foreground: var(--palette-5); /* #a8a59a */
+  --accent: var(--palette-3);          /* #d0c0af — warm sand */
+  --accent-foreground: #3d3530;
+  --destructive: #b04a3a;
+  --destructive-foreground: #ffffff;
+  --success: #7a8a5c;
+  --success-foreground: #ffffff;
+  --border: var(--palette-1);          /* #c4bab2 */
+  --input: var(--palette-1);           /* #c4bab2 */
+  --ring: var(--palette-4);            /* #9f8e7f */
+  --chord: var(--palette-4);           /* #9f8e7f */
+}
+
+.dark {
+  --background: #2a2420;
+  --foreground: #e8e2dc;
+  --card: #362f2a;
+  --card-foreground: #e8e2dc;
+  --popover: #362f2a;
+  --popover-foreground: #e8e2dc;
+  --primary: var(--palette-6);         /* #ceb89f — golden tan */
+  --primary-foreground: #2a2420;
+  --secondary: #443c36;
+  --secondary-foreground: #e8e2dc;
+  --muted: #443c36;
+  --muted-foreground: var(--palette-1); /* #c4bab2 */
+  --accent: #4d443d;
+  --accent-foreground: #e8e2dc;
+  --destructive: #c45a4a;
+  --destructive-foreground: #e8e2dc;
+  --success: #8a9a6c;
+  --success-foreground: #2a2420;
+  --border: #4d443d;
+  --input: #4d443d;
+  --ring: var(--palette-6);            /* #ceb89f */
+  --chord: var(--palette-6);           /* #ceb89f */
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
 }
 
 @media print {
@@ -20,11 +135,10 @@
   }
 
   .song-content {
-    font-size: 14pt !important;
     line-height: 2 !important;
   }
 
-  .song-content span.text-blue-400 {
+  .song-content span.text-chord {
     color: black !important;
     font-weight: bold !important;
   }
