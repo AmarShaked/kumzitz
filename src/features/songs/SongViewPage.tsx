@@ -10,6 +10,13 @@ import { Button } from '@/components/ui/button';
 import { parseChordPro } from '../../lib/chordpro';
 import { findEasiestTranspose } from '../../lib/transpose';
 import { Settings } from 'lucide-react';
+import { useInstrument, type Instrument } from '@/hooks/useInstrument';
+
+const INSTRUMENTS: { value: Instrument; label: string }[] = [
+  { value: 'guitar', label: 'גיטרה' },
+  { value: 'ukulele', label: 'יוקולילי' },
+  { value: 'piano', label: 'פסנתר' },
+];
 
 export default function SongViewPage() {
   const { id } = useParams<{ id: string }>();
@@ -21,6 +28,7 @@ export default function SongViewPage() {
   const [fontSize, setFontSize] = useState(18);
   const { tooltip, onChordHover, onChordLeave } = useChordTooltip();
   const [performanceMode, setPerformanceMode] = useState(false);
+  const { instrument, setInstrument } = useInstrument();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [wakeLock, setWakeLock] = useState<WakeLockSentinel | null>(null);
   const settingsRef = useRef<HTMLDivElement>(null);
@@ -144,6 +152,20 @@ export default function SongViewPage() {
                   <span className="text-sm min-w-[32px] text-center">{fontSize}</span>
                   <Button variant="secondary" size="sm" className="h-7 w-7 p-0"
                     onClick={() => setFontSize((s) => Math.min(32, s + 2))}>+</Button>
+                </div>
+              </div>
+
+              <div className="border-t border-border pt-3 space-y-2">
+                <p className="text-xs font-medium text-muted-foreground">כלי נגינה</p>
+                <div className="flex gap-1">
+                  {INSTRUMENTS.map((inst) => (
+                    <Button key={inst.value} size="sm"
+                      variant={instrument === inst.value ? 'default' : 'secondary'}
+                      onClick={() => setInstrument(inst.value)}
+                      className="flex-1 text-xs">
+                      {inst.label}
+                    </Button>
+                  ))}
                 </div>
               </div>
 
