@@ -22,6 +22,7 @@ export default function SongViewPage() {
   const { tooltip, onChordHover, onChordLeave } = useChordTooltip();
   const [performanceMode, setPerformanceMode] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [wakeLock, setWakeLock] = useState<WakeLockSentinel | null>(null);
   const settingsRef = useRef<HTMLDivElement>(null);
 
   const allChords = useMemo(() => {
@@ -29,6 +30,10 @@ export default function SongViewPage() {
     const lines = parseChordPro(song.content);
     return lines.flatMap((l) => l.segments.map((s) => s.chord).filter(Boolean)) as string[];
   }, [song]);
+
+  useEffect(() => {
+    return () => { wakeLock?.release().catch(() => {}); };
+  }, [wakeLock]);
 
   useEffect(() => {
     if (!settingsOpen) return;
@@ -130,7 +135,7 @@ export default function SongViewPage() {
             <Settings className="h-4 w-4" />
           </Button>
           {settingsOpen && (
-            <div className="absolute top-full mt-1 end-0 z-40 rounded-lg bg-popover border border-border p-4 shadow-xl w-56 space-y-4">
+            <div className="fixed sm:absolute top-auto sm:top-full mt-1 inset-x-3 sm:inset-x-auto sm:end-0 z-40 rounded-lg bg-popover border border-border p-4 shadow-xl sm:w-56 space-y-4">
               <div className="space-y-2">
                 <p className="text-xs font-medium text-muted-foreground">גודל גופן</p>
                 <div className="flex items-center gap-2">
@@ -141,6 +146,27 @@ export default function SongViewPage() {
                     onClick={() => setFontSize((s) => Math.min(32, s + 2))}>+</Button>
                 </div>
               </div>
+
+              {'wakeLock' in navigator && (
+                <div className="border-t border-border pt-3">
+                  <label className="flex items-center justify-between cursor-pointer">
+                    <span className="text-xs font-medium text-muted-foreground">השאר מסך דלוק</span>
+                    <input type="checkbox" checked={!!wakeLock} className="rounded"
+                      onChange={async (e) => {
+                        if (e.target.checked) {
+                          try {
+                            const lock = await navigator.wakeLock.request('screen');
+                            setWakeLock(lock);
+                          } catch { /* user denied or unsupported */ }
+                        } else {
+                          await wakeLock?.release().catch(() => {});
+                          setWakeLock(null);
+                        }
+                      }}
+                    />
+                  </label>
+                </div>
+              )}
 
               <div className="border-t border-border pt-3 space-y-2">
                 <p className="text-xs font-medium text-muted-foreground">ייצוא</p>
