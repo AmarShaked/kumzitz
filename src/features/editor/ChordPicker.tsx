@@ -47,14 +47,14 @@ export default function ChordPicker({ onSelect }: ChordPickerProps) {
   };
 
   return (
-    <div className="absolute top-full mt-1 z-40 rounded-lg bg-popover border border-border p-3 shadow-xl w-72">
+    <div className="absolute top-full mt-1 z-40 rounded-lg bg-popover border border-border p-3 shadow-xl w-[calc(100vw-2rem)] sm:w-72 max-w-72 end-0 sm:end-auto">
       {!root ? (
         <div className="space-y-2">
           <p className="text-xs text-muted-foreground font-medium">בחר שורש</p>
           <div className="grid grid-cols-7 gap-1">
             {ROOTS.map((r) => (
               <Button key={r} variant="secondary" size="sm" onClick={() => setRoot(r)}
-                className="px-2 py-1 text-sm font-mono font-bold">
+                className="px-1 sm:px-2 py-1 text-sm font-mono font-bold">
                 {r}
               </Button>
             ))}

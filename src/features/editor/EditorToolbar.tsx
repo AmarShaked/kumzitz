@@ -13,13 +13,13 @@ export default function EditorToolbar() {
   const [chordPickerOpen, setChordPickerOpen] = useState(false);
 
   return (
-    <div className="space-y-3 rounded-lg bg-card p-4 border border-border">
+    <div className="space-y-3 rounded-lg bg-card p-3 sm:p-4 border border-border">
       <Tab4uImport />
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <Input type="text" placeholder="שם השיר" value={state.title} onChange={(e) => setTitle(e.target.value)} />
         <Input type="text" placeholder="שם האמן" value={state.artist} onChange={(e) => setArtist(e.target.value)} />
       </div>
-      <div className="flex items-center gap-3 flex-wrap">
+      <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
         <select value={state.originalKey} onChange={(e) => setOriginalKey(e.target.value)}
           className="rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
           <option value="">סולם</option>

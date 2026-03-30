@@ -16,8 +16,7 @@ function NeedleGauge({ cents, active }: { cents: number; active: boolean }) {
   const inTune = active && Math.abs(cents) <= 5;
 
   return (
-    <div className="relative w-64 h-32 mx-auto">
-      {/* Arc background */}
+    <div className="relative w-full max-w-64 h-auto mx-auto aspect-[2/1]">
       <svg viewBox="0 0 200 100" className="w-full h-full">
         {/* Tick marks */}
         {Array.from({ length: 21 }, (_, i) => {
@@ -86,14 +85,14 @@ function StringIndicator({ strings, activeNote, activeOctave }: {
   activeOctave: number | null;
 }) {
   return (
-    <div className="flex justify-center gap-3">
+    <div className="flex justify-center gap-2 sm:gap-3">
       {strings.map((s) => {
         const isActive = activeNote === s.note && activeOctave === s.octave;
         return (
           <div
             key={s.label}
             className={`
-              w-12 h-12 rounded-full flex items-center justify-center text-sm font-bold
+              w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center text-xs sm:text-sm font-bold
               transition-all duration-300
               ${isActive
                 ? 'bg-primary text-primary-foreground scale-110 shadow-lg'
@@ -112,14 +111,14 @@ export default function TunerPage() {
   const tuner = useTuner();
 
   return (
-    <div className="mx-auto max-w-lg p-6 space-y-8">
-      <h1 className="text-2xl font-bold text-center">כיוון גיטרה</h1>
+    <div className="mx-auto max-w-lg px-4 sm:px-6 py-6 sm:py-8 space-y-6 sm:space-y-8">
+      <h1 className="text-xl sm:text-2xl font-bold text-center">כיוון גיטרה</h1>
 
       {/* Note display */}
       <div className="text-center space-y-2">
         <div
           className={`
-            text-8xl font-bold tracking-tight transition-all duration-300
+            text-6xl sm:text-8xl font-bold tracking-tight transition-all duration-300
             ${tuner.inTune ? 'text-success scale-110' : tuner.note ? 'text-foreground' : 'text-muted-foreground/30'}
           `}
           style={{ direction: 'ltr' }}

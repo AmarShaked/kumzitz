@@ -19,19 +19,27 @@ export default function PerformanceMode({ title, content, originalKey, onExit }:
   const [isScrolling, setIsScrolling] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const animationRef = useRef<number>(0);
+  const wakeLockRef = useRef<WakeLockSentinel | null>(null);
 
   useEffect(() => {
     localStorage.setItem('kumzitz-perf-font-size', String(fontSize));
   }, [fontSize]);
 
+  // Fullscreen + Wake Lock
   useEffect(() => {
-    const el = containerRef.current;
-    if (!el) return;
     document.documentElement.requestFullscreen?.().catch(() => {});
+
+    // Keep screen on
+    navigator.wakeLock?.request('screen').then((lock) => {
+      wakeLockRef.current = lock;
+    }).catch(() => {});
+
     return () => {
       if (document.fullscreenElement) {
         document.exitFullscreen?.().catch(() => {});
       }
+      wakeLockRef.current?.release().catch(() => {});
+      wakeLockRef.current = null;
     };
   }, []);
 
@@ -58,9 +66,9 @@ export default function PerformanceMode({ title, content, originalKey, onExit }:
 
   return (
     <div className="fixed inset-0 z-50 bg-background flex flex-col">
-      <div className="flex items-center justify-between px-6 py-3 bg-card border-b border-border shrink-0">
-        <h2 className="text-xl font-bold">{title}</h2>
-        <div className="flex items-center gap-4">
+      <div className="flex items-center justify-between px-3 sm:px-6 py-2 sm:py-3 bg-card border-b border-border shrink-0 gap-2 flex-wrap">
+        <h2 className="text-base sm:text-xl font-bold truncate max-w-[40%]">{title}</h2>
+        <div className="flex items-center gap-2 sm:gap-4 flex-wrap">
           <TransposeControls transpose={transpose} onTransposeChange={setTranspose} originalKey={originalKey} />
           <div className="flex items-center gap-1">
             <Button variant="secondary" size="icon" className="w-8 h-8"
@@ -80,13 +88,13 @@ export default function PerformanceMode({ title, content, originalKey, onExit }:
             </Button>
             {isScrolling && (
               <input type="range" min="0.5" max="5" step="0.5" value={scrollSpeed}
-                onChange={(e) => setScrollSpeed(Number(e.target.value))} className="w-20" />
+                onChange={(e) => setScrollSpeed(Number(e.target.value))} className="w-16 sm:w-20" />
             )}
           </div>
           <Button variant="destructive" size="sm" onClick={onExit}>יציאה</Button>
         </div>
       </div>
-      <div ref={containerRef} className="flex-1 overflow-auto p-8">
+      <div ref={containerRef} className="flex-1 overflow-auto p-4 sm:p-8">
         <SongRenderer content={content} transpose={transpose} fontSize={fontSize} />
       </div>
     </div>

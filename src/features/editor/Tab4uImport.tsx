@@ -28,7 +28,7 @@ export default function Tab4uImport() {
   };
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
       <Input
         type="url"
         dir="ltr"
@@ -36,9 +36,9 @@ export default function Tab4uImport() {
         value={url}
         onChange={(e) => { setUrl(e.target.value); setError(''); }}
         onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleImport(); } }}
-        className="w-64 text-sm"
+        className="flex-1 text-sm"
       />
-      <Button size="sm" variant="secondary" onClick={handleImport} disabled={isLoading || !url.trim()}>
+      <Button size="sm" variant="secondary" onClick={handleImport} disabled={isLoading || !url.trim()} className="shrink-0">
         {isLoading ? 'מייבא...' : 'ייבוא מ-tab4u'}
       </Button>
       {error && <span className="text-destructive text-xs">{error}</span>}

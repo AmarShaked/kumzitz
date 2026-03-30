@@ -95,11 +95,11 @@ export default function SongViewPage() {
         onExit={() => setPerformanceMode(false)}
       />
     )}
-    <div className="mx-auto max-w-3xl p-6 space-y-6 print:song-wrap">
+    <div className="mx-auto max-w-3xl px-4 sm:px-6 py-4 sm:py-6 space-y-4 sm:space-y-6 print:song-wrap">
       <div className="flex items-start justify-between print:song-header">
         <div>
-          <h1 className="text-3xl font-bold print:text-xl print:mb-0">{song.title}</h1>
-          <p className="text-lg text-muted-foreground mt-1 print:text-sm print:mt-0 print:text-black/60">{song.artist}</p>
+          <h1 className="text-2xl sm:text-3xl font-bold print:text-xl print:mb-0">{song.title}</h1>
+          <p className="text-base sm:text-lg text-muted-foreground mt-1 print:text-sm print:mt-0 print:text-black/60">{song.artist}</p>
           <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground print:hidden">
             {song.originalKey && <span>סולם: {song.originalKey}</span>}
             {song.bpm && <span>BPM: {song.bpm}</span>}
@@ -117,12 +117,12 @@ export default function SongViewPage() {
         </div>
       </div>
 
-      <div className="flex items-center gap-3 print:hidden">
+      <div className="flex items-center gap-2 sm:gap-3 flex-wrap print:hidden">
         <TransposeControls transpose={transpose} onTransposeChange={setTranspose} originalKey={song.originalKey} />
         <Button variant={simplified ? 'default' : 'secondary'} size="sm" onClick={handleSimplify}>
           {simplified ? 'ביטול פישוט' : 'פשט אקורדים'}
         </Button>
-        <Button variant="secondary" size="sm" onClick={() => window.print()}>הדפסה</Button>
+        <Button variant="secondary" size="sm" className="hidden sm:inline-flex" onClick={() => window.print()}>הדפסה</Button>
         <Button variant="secondary" size="sm" onClick={() => setPerformanceMode(true)}>מצב הופעה</Button>
 
         <div className="relative" ref={settingsRef}>
@@ -130,7 +130,7 @@ export default function SongViewPage() {
             <Settings className="h-4 w-4" />
           </Button>
           {settingsOpen && (
-            <div className="absolute top-full mt-1 left-0 z-40 rounded-lg bg-popover border border-border p-4 shadow-xl w-56 space-y-4">
+            <div className="absolute top-full mt-1 end-0 z-40 rounded-lg bg-popover border border-border p-4 shadow-xl w-56 space-y-4">
               <div className="space-y-2">
                 <p className="text-xs font-medium text-muted-foreground">גודל גופן</p>
                 <div className="flex items-center gap-2">
@@ -156,7 +156,7 @@ export default function SongViewPage() {
         </div>
       </div>
 
-      <div className="rounded-lg bg-muted/30 p-6">
+      <div className="rounded-lg bg-muted/30 p-4 sm:p-6">
         <SongRenderer content={song.content} transpose={transpose} simplify={simplified} fontSize={fontSize} onChordHover={onChordHover} onChordLeave={onChordLeave} />
       </div>
       <ChordTooltipOverlay tooltip={tooltip} />

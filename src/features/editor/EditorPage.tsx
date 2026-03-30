@@ -34,17 +34,16 @@ function EditorContent({ songId }: { songId?: string }) {
   };
 
   return (
-    <div className="mx-auto max-w-6xl p-6 space-y-4">
+    <div className="mx-auto max-w-6xl px-4 sm:px-6 py-4 sm:py-6 space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">{songId ? 'עריכת שיר' : 'שיר חדש'}</h1>
+        <h1 className="text-xl sm:text-2xl font-bold">{songId ? 'עריכת שיר' : 'שיר חדש'}</h1>
         <Button variant="success" onClick={handleSave} disabled={isSaving || !state.title || !state.artist || !state.content}>
           {isSaving ? 'שומר...' : 'שמור'}
         </Button>
       </div>
       <EditorToolbar />
-      <div className="grid grid-cols-2 gap-4 rounded-lg border border-border overflow-hidden">
-      <ChordProTextarea />
-
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 rounded-lg border border-border overflow-hidden">
+        <ChordProTextarea />
         <EditorPreview />
       </div>
     </div>
