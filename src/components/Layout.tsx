@@ -15,6 +15,9 @@ export default function Layout() {
           קומזיץ
         </Link>
         <div className="flex items-center gap-4">
+          <Link to="/tuner" className="text-sm text-muted-foreground hover:text-foreground">
+            כיוון גיטרה
+          </Link>
           <Button variant="ghost" size="icon" onClick={toggleTheme} aria-label="Toggle theme">
             {theme === 'light' ? <Moon className="h-5 w-5" /> : <Sun className="h-5 w-5" />}
           </Button>

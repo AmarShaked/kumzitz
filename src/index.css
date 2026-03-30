@@ -124,6 +124,8 @@
   body {
     background: white !important;
     color: black !important;
+    margin: 0 !important;
+    padding: 0 !important;
   }
 
   nav,
@@ -134,8 +136,33 @@
     display: none !important;
   }
 
+  /* Remove screen-only styling from the song wrapper */
+  .print\:song-wrap {
+    max-width: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .print\:song-wrap > * {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: none !important;
+    border: none !important;
+    border-radius: 0 !important;
+  }
+
   .song-content {
-    line-height: 2 !important;
+    line-height: 1.8 !important;
+    columns: 2;
+    column-gap: 2cm;
+    column-rule: none;
+    orphans: 3;
+    widows: 3;
+  }
+
+  /* Keep section breaks (empty lines) from splitting across columns */
+  .song-content > div {
+    break-inside: avoid;
   }
 
   .song-content span.text-chord {
@@ -143,8 +170,14 @@
     font-weight: bold !important;
   }
 
+  /* Print header (title/artist) spans full width above columns */
+  .print\:song-header {
+    margin-bottom: 0.5cm !important;
+    column-span: all;
+  }
+
   @page {
     size: A4;
-    margin: 2cm;
+    margin: 1.5cm;
   }
 }

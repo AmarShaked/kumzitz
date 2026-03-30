@@ -95,12 +95,12 @@ export default function SongViewPage() {
         onExit={() => setPerformanceMode(false)}
       />
     )}
-    <div className="mx-auto max-w-3xl p-6 space-y-6">
-      <div className="flex items-start justify-between">
+    <div className="mx-auto max-w-3xl p-6 space-y-6 print:song-wrap">
+      <div className="flex items-start justify-between print:song-header">
         <div>
-          <h1 className="text-3xl font-bold">{song.title}</h1>
-          <p className="text-lg text-muted-foreground mt-1">{song.artist}</p>
-          <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
+          <h1 className="text-3xl font-bold print:text-xl print:mb-0">{song.title}</h1>
+          <p className="text-lg text-muted-foreground mt-1 print:text-sm print:mt-0 print:text-black/60">{song.artist}</p>
+          <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground print:hidden">
             {song.originalKey && <span>סולם: {song.originalKey}</span>}
             {song.bpm && <span>BPM: {song.bpm}</span>}
           </div>
