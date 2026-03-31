@@ -31,8 +31,8 @@ function ChordSegmentSpan({
   return (
     <span className={`inline-flex flex-col items-start${chordOnly ? ' mx-1' : ''}`}>
       <span
-        className="text-chord font-bold select-none h-6"
-        style={{ direction: 'ltr', unicodeBidi: 'embed' }}
+        className={`text-chord font-bold p-0.5 leading-none select-none ${segment.chord ? ' bg-chord/20 rounded ' : ''}`}
+        style={{ direction: 'ltr', unicodeBidi: 'embed', fontSize: '0.825em' }}
         onMouseEnter={handleMouseEnter}
         onMouseLeave={onChordLeave}
       >

@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import ChordDiagram from './ChordDiagram';
 import { hasChordDiagram } from './chord-data';
 import { hasUkuleleChord } from './ukulele-data';
@@ -49,15 +50,18 @@ export function ChordTooltipOverlay({ tooltip }: { tooltip: TooltipState }) {
 
   if (!tooltip) return null;
 
-  return (
+  return createPortal(
     <div
       ref={ref}
       className="fixed z-50 pointer-events-none"
       style={{ left: pos.x, top: pos.y }}
     >
       <div className="bg-popover rounded-lg border border-border shadow-xl p-2">
-        <ChordDiagram chord={tooltip.chord} />
+        <div className="overflow-hidden">
+          <ChordDiagram chord={tooltip.chord} />
+        </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

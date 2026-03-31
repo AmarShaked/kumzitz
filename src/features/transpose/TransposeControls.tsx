@@ -18,8 +18,8 @@ export default function TransposeControls({ transpose, onTransposeChange, origin
   return (
     <div className="flex items-center gap-2">
       <Button variant="secondary" size="icon" onClick={() => onTransposeChange(transpose - 1)} className="w-8 h-8 text-lg font-bold">-</Button>
-      <span className="text-sm text-foreground min-w-[60px] text-center">
-        {currentKey ?? '—'}
+      <span className="text-sm text-foreground min-w-[40px] text-center">
+        {currentKey ? currentKey : null}
         {transpose !== 0 && <span className="text-muted-foreground text-xs block">{transpose > 0 ? `+${transpose}` : transpose}</span>}
       </span>
       <Button variant="secondary" size="icon" onClick={() => onTransposeChange(transpose + 1)} className="w-8 h-8 text-lg font-bold">+</Button>

@@ -13,7 +13,7 @@ export default function ChordDiagram({ chord, width }: ChordDiagramProps) {
   const { theme } = useTheme();
   const { instrument } = useInstrument();
 
-  const resolvedWidth = width ?? (instrument === 'ukulele' ? 110 : 160);
+  const resolvedWidth = width ?? (instrument === 'ukulele' ? 110 : 110);
 
   useEffect(() => {
     if (!containerRef.current || instrument === 'piano') return;
@@ -41,6 +41,9 @@ export default function ChordDiagram({ chord, width }: ChordDiagramProps) {
         fretColor: isDark ? '#a8a59a' : '#c4bab2',
         fingerColor: isDark ? '#ceb89f' : '#9f8e7f',
         barreChordRadius: 0.3,
+        fretLabelColor: isDark ? '#a8a59a' : '#9f8e7f',
+        fretLabelFontSize: 28,
+        sidePadding: 0.15,
       } as any);
 
     chart.draw();
