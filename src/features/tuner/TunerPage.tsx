@@ -189,7 +189,10 @@ function StringCircle({
         }
       `}
     >
-      {string.note}
+      <div className="flex flex-col items-center leading-none">
+        <span>{string.note}</span>
+        <span className="text-[9px] opacity-60">{string.octave}</span>
+      </div>
     </div>
   );
 }
@@ -202,7 +205,7 @@ export default function TunerPage() {
   const half = Math.ceil(config.strings.length / 2);
   const leftStrings = config.strings.slice(0, half);
   const rightStrings = config.strings.slice(half);
-  const pegPairs = (config.strings.length / 2) as 2 | 3;
+  const pegPairs = config.strings.length === 4 ? 2 : 3;
 
   function handleInstrumentCycle() {
     const next =
@@ -217,6 +220,7 @@ export default function TunerPage() {
       <button
         onClick={handleInstrumentCycle}
         className="flex flex-col items-start group"
+        aria-label="החלף כלי נגינה"
       >
         <span className="flex items-center gap-0.5 text-base font-bold text-foreground group-hover:text-primary transition-colors">
           {config.label}
