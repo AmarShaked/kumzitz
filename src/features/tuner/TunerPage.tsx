@@ -1,15 +1,44 @@
-import { useTuner } from './useTuner';
+import { useState } from 'react';
+import { useTuner, type TunerString } from './useTuner';
 import { Button } from '@/components/ui/button';
 import { Mic, MicOff } from 'lucide-react';
 
-const GUITAR_STRINGS = [
-  { label: 'E2', note: 'E', octave: 2 },
-  { label: 'A2', note: 'A', octave: 2 },
-  { label: 'D3', note: 'D', octave: 3 },
-  { label: 'G3', note: 'G', octave: 3 },
-  { label: 'B3', note: 'B', octave: 3 },
-  { label: 'E4', note: 'E', octave: 4 },
-];
+type Instrument = 'guitar' | 'ukulele' | 'ukulele-low-g';
+
+const INSTRUMENT_CONFIGS: Record<Instrument, { label: string; title: string; strings: TunerString[] }> = {
+  guitar: {
+    label: 'גיטרה',
+    title: 'כיוון גיטרה',
+    strings: [
+      { note: 'E', octave: 2, freq: 82.41 },
+      { note: 'A', octave: 2, freq: 110.0 },
+      { note: 'D', octave: 3, freq: 146.83 },
+      { note: 'G', octave: 3, freq: 196.0 },
+      { note: 'B', octave: 3, freq: 246.94 },
+      { note: 'E', octave: 4, freq: 329.63 },
+    ],
+  },
+  ukulele: {
+    label: 'אוקולילה',
+    title: 'כיוון אוקולילה',
+    strings: [
+      { note: 'G', octave: 4, freq: 392.0 },
+      { note: 'C', octave: 4, freq: 261.63 },
+      { note: 'E', octave: 4, freq: 329.63 },
+      { note: 'A', octave: 4, freq: 440.0 },
+    ],
+  },
+  'ukulele-low-g': {
+    label: 'אוקולילה Low-G',
+    title: 'כיוון אוקולילה (Low-G)',
+    strings: [
+      { note: 'G', octave: 3, freq: 196.0 },
+      { note: 'C', octave: 4, freq: 261.63 },
+      { note: 'E', octave: 4, freq: 329.63 },
+      { note: 'A', octave: 4, freq: 440.0 },
+    ],
+  },
+};
 
 function NeedleGauge({ cents, active }: { cents: number; active: boolean }) {
   const rotation = active ? (cents / 50) * 45 : 0;
@@ -18,7 +47,6 @@ function NeedleGauge({ cents, active }: { cents: number; active: boolean }) {
   return (
     <div className="relative w-full max-w-64 h-auto mx-auto aspect-[2/1]">
       <svg viewBox="0 0 200 100" className="w-full h-full">
-        {/* Tick marks */}
         {Array.from({ length: 21 }, (_, i) => {
           const angle = -90 + (i / 20) * 180;
           const rad = (angle * Math.PI) / 180;
@@ -38,7 +66,6 @@ function NeedleGauge({ cents, active }: { cents: number; active: boolean }) {
           );
         })}
 
-        {/* Center zone highlight */}
         <path
           d={`M ${100 + 82 * Math.cos((-99 * Math.PI) / 180)} ${100 + 82 * Math.sin((-99 * Math.PI) / 180)}
               A 82 82 0 0 1 ${100 + 82 * Math.cos((-81 * Math.PI) / 180)} ${100 + 82 * Math.sin((-81 * Math.PI) / 180)}`}
@@ -48,7 +75,6 @@ function NeedleGauge({ cents, active }: { cents: number; active: boolean }) {
           strokeLinecap="round"
         />
 
-        {/* Needle */}
         <g
           style={{
             transform: `rotate(${rotation}deg)`,
@@ -67,10 +93,8 @@ function NeedleGauge({ cents, active }: { cents: number; active: boolean }) {
           />
         </g>
 
-        {/* Center dot */}
         <circle cx={100} cy={100} r={4} className={inTune ? 'fill-success' : 'fill-muted-foreground/50'} />
 
-        {/* Labels */}
         <text x={18} y={98} className="fill-muted-foreground text-[8px]" textAnchor="middle">-50</text>
         <text x={100} y={18} className="fill-success text-[8px]" textAnchor="middle">0</text>
         <text x={182} y={98} className="fill-muted-foreground text-[8px]" textAnchor="middle">+50</text>
@@ -80,7 +104,7 @@ function NeedleGauge({ cents, active }: { cents: number; active: boolean }) {
 }
 
 function StringIndicator({ strings, activeNote, activeOctave }: {
-  strings: typeof GUITAR_STRINGS;
+  strings: TunerString[];
   activeNote: string | null;
   activeOctave: number | null;
 }) {
@@ -88,9 +112,10 @@ function StringIndicator({ strings, activeNote, activeOctave }: {
     <div className="flex justify-center gap-2 sm:gap-3">
       {strings.map((s) => {
         const isActive = activeNote === s.note && activeOctave === s.octave;
+        const label = `${s.note}${s.octave}`;
         return (
           <div
-            key={s.label}
+            key={label}
             className={`
               w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center text-xs sm:text-sm font-bold
               transition-all duration-300
@@ -99,7 +124,7 @@ function StringIndicator({ strings, activeNote, activeOctave }: {
                 : 'bg-secondary text-secondary-foreground'}
             `}
           >
-            {s.label}
+            {label}
           </div>
         );
       })}
@@ -108,11 +133,32 @@ function StringIndicator({ strings, activeNote, activeOctave }: {
 }
 
 export default function TunerPage() {
-  const tuner = useTuner();
+  const [instrument, setInstrument] = useState<Instrument>('guitar');
+  const config = INSTRUMENT_CONFIGS[instrument];
+  const tuner = useTuner(config.strings);
+
+  function handleInstrumentChange(next: Instrument) {
+    if (tuner.isListening) tuner.stop();
+    setInstrument(next);
+  }
 
   return (
     <div className="mx-auto max-w-lg px-4 sm:px-6 py-6 sm:py-8 space-y-6 sm:space-y-8">
-      <h1 className="text-xl sm:text-2xl font-bold text-center">כיוון גיטרה</h1>
+      <h1 className="text-xl sm:text-2xl font-bold text-center">{config.title}</h1>
+
+      {/* Instrument selector */}
+      <div className="flex justify-center gap-2" dir="rtl">
+        {(Object.keys(INSTRUMENT_CONFIGS) as Instrument[]).map((key) => (
+          <Button
+            key={key}
+            size="sm"
+            variant={instrument === key ? 'default' : 'outline'}
+            onClick={() => handleInstrumentChange(key)}
+          >
+            {INSTRUMENT_CONFIGS[key].label}
+          </Button>
+        ))}
+      </div>
 
       {/* Note display */}
       <div className="text-center space-y-2">
@@ -153,7 +199,7 @@ export default function TunerPage() {
 
       {/* String indicators */}
       <StringIndicator
-        strings={GUITAR_STRINGS}
+        strings={config.strings}
         activeNote={tuner.note}
         activeOctave={tuner.octave}
       />
