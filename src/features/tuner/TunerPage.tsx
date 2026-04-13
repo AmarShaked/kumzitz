@@ -138,6 +138,7 @@ export default function TunerPage() {
   const tuner = useTuner(config.strings);
 
   function handleInstrumentChange(next: Instrument) {
+    if (next === instrument) return;
     if (tuner.isListening) tuner.stop();
     setInstrument(next);
   }
