@@ -265,7 +265,7 @@ export default function TunerPage() {
       />
 
       {/* Instrument area */}
-      <div className="flex items-start justify-between px-2" style={{ minHeight: '144px' }}>
+      <div className="flex items-start justify-between px-2" dir="ltr" style={{ minHeight: '144px' }}>
         <div className="flex flex-col gap-3">
           {leftStrings.map((s) => (
             <StringCircle
