@@ -10,7 +10,7 @@ export function frequencyToNoteName(freq: number): string {
   return NOTE_NAMES[noteIndex];
 }
 
-function detectNotes(analyser: AnalyserNode, dataArray: Float32Array): string[] {
+function detectNotes(analyser: AnalyserNode, dataArray: Float32Array<ArrayBuffer>): string[] {
   analyser.getFloatFrequencyData(dataArray);
   const bufferLength = analyser.frequencyBinCount;
 
