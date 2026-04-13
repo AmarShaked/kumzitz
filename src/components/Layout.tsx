@@ -18,6 +18,9 @@ export default function Layout() {
           <Link to="/tuner" className="text-xs sm:text-sm text-muted-foreground hover:text-foreground">
             כיוון גיטרה
           </Link>
+          <Link to="/chord-finder" className="text-xs sm:text-sm text-muted-foreground hover:text-foreground">
+            זיהוי אקורד<sup className="text-[10px] ml-0.5 opacity-60">β</sup>
+          </Link>
           <Button variant="ghost" size="icon" onClick={toggleTheme} aria-label="Toggle theme" className="h-8 w-8 sm:h-9 sm:w-9">
             {theme === 'light' ? <Moon className="h-4 w-4 sm:h-5 sm:w-5" /> : <Sun className="h-4 w-4 sm:h-5 sm:w-5" />}
           </Button>
