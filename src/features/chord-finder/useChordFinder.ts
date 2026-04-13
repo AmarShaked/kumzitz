@@ -10,10 +10,9 @@ export function frequencyToNoteName(freq: number): string {
   return NOTE_NAMES[noteIndex];
 }
 
-function detectNotes(analyser: AnalyserNode): string[] {
-  const bufferLength = analyser.frequencyBinCount;
-  const dataArray = new Float32Array(bufferLength);
+function detectNotes(analyser: AnalyserNode, dataArray: Float32Array): string[] {
   analyser.getFloatFrequencyData(dataArray);
+  const bufferLength = analyser.frequencyBinCount;
 
   const sampleRate = analyser.context.sampleRate;
   const THRESHOLD_DB = -50;
@@ -45,6 +44,7 @@ export type ChordFinderState = {
   isListening: boolean;
   detectedNotes: string[];
   chords: string[];
+  error: string | null;
 };
 
 export function useChordFinder() {
@@ -52,6 +52,7 @@ export function useChordFinder() {
     isListening: false,
     detectedNotes: [],
     chords: [],
+    error: null,
   });
 
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -66,10 +67,11 @@ export function useChordFinder() {
     audioContextRef.current = null;
     analyserRef.current = null;
     streamRef.current = null;
-    setState({ isListening: false, detectedNotes: [], chords: [] });
+    setState({ isListening: false, detectedNotes: [], chords: [], error: null });
   }, []);
 
   const start = useCallback(async () => {
+    if (audioContextRef.current) return;
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const ctx = new AudioContext();
@@ -82,9 +84,10 @@ export function useChordFinder() {
       analyserRef.current = analyser;
       streamRef.current = stream;
 
-      setState((s) => ({ ...s, isListening: true }));
+      setState((s) => ({ ...s, isListening: true, error: null }));
 
       const timeBuffer = new Float32Array(analyser.fftSize);
+      const dataArray = new Float32Array(analyser.frequencyBinCount);
 
       const tick = () => {
         if (!analyserRef.current) return;
@@ -100,7 +103,7 @@ export function useChordFinder() {
           return;
         }
 
-        const notes = detectNotes(analyserRef.current);
+        const notes = detectNotes(analyserRef.current, dataArray);
         const chords = notes.length >= 2 ? Chord.detect(notes) : [];
         setState((s) => ({ ...s, detectedNotes: notes, chords }));
 
@@ -109,7 +112,7 @@ export function useChordFinder() {
 
       tick();
     } catch {
-      setState((s) => ({ ...s, isListening: false }));
+      setState((s) => ({ ...s, isListening: false, error: 'לא ניתן לגשת למיקרופון' }));
     }
   }, []);
 
