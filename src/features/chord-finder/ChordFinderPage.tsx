@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Mic, MicOff } from 'lucide-react';
 
 export default function ChordFinderPage() {
-  const { isListening, detectedNotes, chords, start, stop } = useChordFinder();
+  const { isListening, detectedNotes, chords, error, start, stop } = useChordFinder();
 
   const primaryChord = chords[0] ?? null;
   const alternativeChords = chords.slice(1, 4);
@@ -38,18 +38,16 @@ export default function ChordFinderPage() {
       </div>
 
       {/* Detected notes */}
-      {detectedNotes.length > 0 && (
-        <div className="flex justify-center gap-2 flex-wrap" dir="ltr">
-          {detectedNotes.map((note) => (
-            <span
-              key={note}
-              className="px-3 py-1 rounded-full bg-secondary text-secondary-foreground text-sm font-medium"
-            >
-              {note}
-            </span>
-          ))}
-        </div>
-      )}
+      <div className="flex justify-center gap-2 flex-wrap min-h-[2rem]" dir="ltr">
+        {detectedNotes.map((note) => (
+          <span
+            key={note}
+            className="px-3 py-1 rounded-full bg-secondary text-secondary-foreground text-sm font-medium"
+          >
+            {note}
+          </span>
+        ))}
+      </div>
 
       {/* Start/Stop button */}
       <div className="flex justify-center">
@@ -65,6 +63,10 @@ export default function ChordFinderPage() {
           </Button>
         )}
       </div>
+
+      {error && (
+        <p className="text-center text-sm text-destructive">{error}</p>
+      )}
 
       {/* Beta disclaimer */}
       <p className="text-center text-xs text-muted-foreground">
