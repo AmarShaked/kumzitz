@@ -1,14 +1,18 @@
 import { useState } from 'react';
 import { useTuner, type TunerString } from './useTuner';
 import { Button } from '@/components/ui/button';
-import { Mic, MicOff } from 'lucide-react';
+import { Mic, MicOff, ChevronRight } from 'lucide-react';
 
 type Instrument = 'guitar' | 'ukulele' | 'ukulele-low-g';
 
-const INSTRUMENT_CONFIGS: Record<Instrument, { label: string; title: string; strings: TunerString[] }> = {
+const INSTRUMENT_CONFIGS: Record<Instrument, {
+  label: string;
+  tuningLabel: string;
+  strings: TunerString[];
+}> = {
   guitar: {
     label: 'גיטרה',
-    title: 'כיוון גיטרה',
+    tuningLabel: 'Standard',
     strings: [
       { note: 'E', octave: 2, freq: 82.41 },
       { note: 'A', octave: 2, freq: 110.0 },
@@ -20,7 +24,7 @@ const INSTRUMENT_CONFIGS: Record<Instrument, { label: string; title: string; str
   },
   ukulele: {
     label: 'אוקולילה',
-    title: 'כיוון אוקולילה',
+    tuningLabel: 'Standard',
     strings: [
       { note: 'G', octave: 4, freq: 392.0 },
       { note: 'C', octave: 4, freq: 261.63 },
@@ -29,8 +33,8 @@ const INSTRUMENT_CONFIGS: Record<Instrument, { label: string; title: string; str
     ],
   },
   'ukulele-low-g': {
-    label: 'אוקולילה Low-G',
-    title: 'כיוון אוקולילה (Low-G)',
+    label: 'אוקולילה',
+    tuningLabel: 'Low-G',
     strings: [
       { note: 'G', octave: 3, freq: 196.0 },
       { note: 'C', octave: 4, freq: 261.63 },
@@ -40,94 +44,152 @@ const INSTRUMENT_CONFIGS: Record<Instrument, { label: string; title: string; str
   },
 };
 
-function NeedleGauge({ cents, active }: { cents: number; active: boolean }) {
-  const rotation = active ? (cents / 50) * 45 : 0;
-  const inTune = active && Math.abs(cents) <= 5;
+const INSTRUMENT_ORDER: Instrument[] = ['guitar', 'ukulele', 'ukulele-low-g'];
+
+function HeadstockSVG({ pegPairs }: { pegPairs: 2 | 3 }) {
+  const bodyHeight = pegPairs * 22 + 16;
+  const totalHeight = 44 + bodyHeight;
+  return (
+    <svg
+      width="56"
+      height={totalHeight}
+      viewBox={`0 0 56 ${totalHeight}`}
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      {/* Neck */}
+      <rect x="20" y="0" width="16" height="44" rx="4" fill="#5c3a1e" />
+      {/* Nut */}
+      <rect x="17" y="40" width="22" height="5" rx="1" fill="#c8b89a" />
+      {/* Headstock body */}
+      <rect x="7" y="44" width="42" height={bodyHeight} rx="9" fill="#7c4f2a" />
+      {/* Tuning pegs + strings */}
+      {Array.from({ length: pegPairs }, (_, i) => {
+        const pegY = 62 + i * 22;
+        return (
+          <g key={i}>
+            <circle cx="8" cy={pegY} r="5" fill="#777" />
+            <circle cx="8" cy={pegY} r="3" fill="#aaa" />
+            <circle cx="48" cy={pegY} r="5" fill="#777" />
+            <circle cx="48" cy={pegY} r="3" fill="#aaa" />
+            <line x1="28" y1="40" x2="28" y2={pegY} stroke="#c8b89a" strokeWidth="0.8" opacity="0.5" />
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
+
+function TuningGraph({
+  cents,
+  note,
+  octave,
+  inTune,
+}: {
+  cents: number;
+  note: string | null;
+  octave: number | null;
+  inTune: boolean;
+}) {
+  const hasNote = !!note;
+  const clamped = Math.max(-50, Math.min(50, cents));
+  const bubbleOffset = (clamped / 50) * 45;
+
+  const dirLabel = !hasNote
+    ? null
+    : inTune
+    ? 'מכוון! ✓'
+    : cents < 0
+    ? 'כוון למעלה'
+    : 'כוון למטה';
+
+  const labelOnRight = cents < 0;
 
   return (
-    <div className="relative w-full max-w-64 h-auto mx-auto aspect-[2/1]">
-      <svg viewBox="0 0 200 100" className="w-full h-full">
-        {Array.from({ length: 21 }, (_, i) => {
-          const angle = -90 + (i / 20) * 180;
-          const rad = (angle * Math.PI) / 180;
-          const isMajor = i % 5 === 0;
-          const r1 = isMajor ? 72 : 76;
-          const r2 = 82;
-          return (
-            <line
-              key={i}
-              x1={100 + r1 * Math.cos(rad)}
-              y1={100 + r1 * Math.sin(rad)}
-              x2={100 + r2 * Math.cos(rad)}
-              y2={100 + r2 * Math.sin(rad)}
-              className={i === 10 ? 'stroke-success' : 'stroke-muted-foreground/40'}
-              strokeWidth={isMajor ? 2 : 1}
-            />
-          );
-        })}
+    <div
+      className="relative h-28 rounded-xl overflow-hidden"
+      style={{
+        background: `
+          repeating-linear-gradient(0deg, transparent, transparent 17px, rgba(255,255,255,0.03) 17px, rgba(255,255,255,0.03) 18px),
+          repeating-linear-gradient(90deg, transparent, transparent 17px, rgba(255,255,255,0.03) 17px, rgba(255,255,255,0.03) 18px)
+        `,
+        backgroundColor: 'hsl(var(--muted) / 0.2)',
+      }}
+    >
+      {/* Center target line */}
+      <div className="absolute left-1/2 top-0 bottom-0 w-0.5 -translate-x-1/2 bg-destructive/60" />
 
-        <path
-          d={`M ${100 + 82 * Math.cos((-99 * Math.PI) / 180)} ${100 + 82 * Math.sin((-99 * Math.PI) / 180)}
-              A 82 82 0 0 1 ${100 + 82 * Math.cos((-81 * Math.PI) / 180)} ${100 + 82 * Math.sin((-81 * Math.PI) / 180)}`}
-          fill="none"
-          className="stroke-success/30"
-          strokeWidth={6}
-          strokeLinecap="round"
-        />
+      {hasNote && (
+        <>
+          {/* Cents bubble */}
+          <div
+            className={`
+              absolute top-4 w-10 h-10 rounded-full
+              flex items-center justify-center
+              text-xs font-bold text-white
+              transition-[left] duration-100 ease-out
+              ${inTune ? 'bg-success' : 'bg-destructive'}
+            `}
+            style={{ left: `calc(50% + ${bubbleOffset}% - 20px)` }}
+          >
+            {inTune ? '✓' : clamped > 0 ? `+${clamped}` : clamped}
+          </div>
 
-        <g
-          style={{
-            transform: `rotate(${rotation}deg)`,
-            transformOrigin: '100px 100px',
-            transition: 'transform 0.15s ease-out',
-          }}
-        >
-          <line
-            x1={100}
-            y1={100}
-            x2={100}
-            y2={20}
-            className={inTune ? 'stroke-success' : active ? 'stroke-primary' : 'stroke-muted-foreground/30'}
-            strokeWidth={2.5}
-            strokeLinecap="round"
-          />
-        </g>
+          {/* Direction label */}
+          {dirLabel && (
+            <div
+              className="absolute top-6 text-xs font-medium px-2 py-0.5 rounded-full text-white whitespace-nowrap"
+              style={{
+                backgroundColor: 'rgba(0,0,0,0.45)',
+                ...(labelOnRight
+                  ? { left: 'calc(50% + 28px)' }
+                  : { right: 'calc(50% + 28px)' }),
+              }}
+            >
+              {dirLabel}
+            </div>
+          )}
 
-        <circle cx={100} cy={100} r={4} className={inTune ? 'fill-success' : 'fill-muted-foreground/50'} />
+          {/* Note + octave pill */}
+          <div
+            className="absolute bottom-2 left-1/2 -translate-x-1/2 rounded-full px-4 py-0.5 text-sm font-bold text-white"
+            style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
+            dir="ltr"
+          >
+            {note}
+            <sup className="text-[10px] ml-0.5">{octave}</sup>
+          </div>
+        </>
+      )}
 
-        <text x={18} y={98} className="fill-muted-foreground text-[8px]" textAnchor="middle">-50</text>
-        <text x={100} y={18} className="fill-success text-[8px]" textAnchor="middle">0</text>
-        <text x={182} y={98} className="fill-muted-foreground text-[8px]" textAnchor="middle">+50</text>
-      </svg>
+      {!hasNote && (
+        <div className="absolute inset-0 flex items-center justify-center text-muted-foreground/30 text-sm">
+          נגן מיתר
+        </div>
+      )}
     </div>
   );
 }
 
-function StringIndicator({ strings, activeNote, activeOctave }: {
-  strings: TunerString[];
-  activeNote: string | null;
-  activeOctave: number | null;
+function StringCircle({
+  string,
+  isActive,
+}: {
+  string: TunerString;
+  isActive: boolean;
 }) {
   return (
-    <div className="flex justify-center gap-2 sm:gap-3">
-      {strings.map((s) => {
-        const isActive = activeNote === s.note && activeOctave === s.octave;
-        const label = `${s.note}${s.octave}`;
-        return (
-          <div
-            key={label}
-            className={`
-              w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center text-xs sm:text-sm font-bold
-              transition-all duration-300
-              ${isActive
-                ? 'bg-primary text-primary-foreground scale-110 shadow-lg'
-                : 'bg-secondary text-secondary-foreground'}
-            `}
-          >
-            {label}
-          </div>
-        );
-      })}
+    <div
+      className={`
+        w-11 h-11 rounded-full flex items-center justify-center
+        text-sm font-bold transition-all duration-300
+        ${isActive
+          ? 'bg-primary text-primary-foreground scale-110 shadow-lg'
+          : 'bg-secondary text-secondary-foreground'
+        }
+      `}
+    >
+      {string.note}
     </div>
   );
 }
@@ -137,73 +199,64 @@ export default function TunerPage() {
   const config = INSTRUMENT_CONFIGS[instrument];
   const tuner = useTuner(config.strings);
 
-  function handleInstrumentChange(next: Instrument) {
-    if (next === instrument) return;
+  const half = Math.ceil(config.strings.length / 2);
+  const leftStrings = config.strings.slice(0, half);
+  const rightStrings = config.strings.slice(half);
+  const pegPairs = (config.strings.length / 2) as 2 | 3;
+
+  function handleInstrumentCycle() {
+    const next =
+      INSTRUMENT_ORDER[(INSTRUMENT_ORDER.indexOf(instrument) + 1) % INSTRUMENT_ORDER.length];
     if (tuner.isListening) tuner.stop();
     setInstrument(next);
   }
 
   return (
-    <div className="mx-auto max-w-lg px-4 sm:px-6 py-6 sm:py-8 space-y-6 sm:space-y-8">
-      <h1 className="text-xl sm:text-2xl font-bold text-center">{config.title}</h1>
-
-      {/* Instrument selector */}
-      <div className="flex justify-center gap-2" dir="rtl">
-        {(Object.keys(INSTRUMENT_CONFIGS) as Instrument[]).map((key) => (
-          <Button
-            key={key}
-            size="sm"
-            variant={instrument === key ? 'default' : 'outline'}
-            onClick={() => handleInstrumentChange(key)}
-          >
-            {INSTRUMENT_CONFIGS[key].label}
-          </Button>
-        ))}
-      </div>
-
-      {/* Note display */}
-      <div className="text-center space-y-2">
-        <div
-          className={`
-            text-6xl sm:text-8xl font-bold tracking-tight transition-all duration-300
-            ${tuner.inTune ? 'text-success scale-110' : tuner.note ? 'text-foreground' : 'text-muted-foreground/30'}
-          `}
-          style={{ direction: 'ltr' }}
-        >
-          {tuner.note ?? '—'}
-        </div>
-        {tuner.frequency && (
-          <p className="text-sm text-muted-foreground" dir="ltr">
-            {tuner.frequency} Hz
-          </p>
-        )}
-      </div>
-
-      {/* Gauge */}
-      <NeedleGauge cents={tuner.cents} active={!!tuner.note} />
-
-      {/* Cents indicator */}
-      <div className="text-center">
-        <span
-          className={`
-            inline-block px-4 py-1 rounded-full text-sm font-medium transition-all duration-300
-            ${tuner.inTune
-              ? 'bg-success/20 text-success'
-              : tuner.note
-                ? tuner.cents > 0 ? 'bg-destructive/10 text-destructive' : 'bg-primary/10 text-primary'
-                : 'bg-muted text-muted-foreground'}
-          `}
-        >
-          {tuner.inTune ? 'מכוון!' : tuner.note ? (tuner.cents > 0 ? `גבוה +${tuner.cents}` : `נמוך ${tuner.cents}`) : 'נגן מיתר'}
+    <div className="mx-auto max-w-sm px-4 py-6 space-y-5">
+      {/* Top bar */}
+      <button
+        onClick={handleInstrumentCycle}
+        className="flex flex-col items-start group"
+      >
+        <span className="flex items-center gap-0.5 text-base font-bold text-foreground group-hover:text-primary transition-colors">
+          {config.label}
+          <ChevronRight className="h-4 w-4 text-muted-foreground" />
         </span>
-      </div>
+        <span className="text-xs text-muted-foreground">{config.tuningLabel}</span>
+      </button>
 
-      {/* String indicators */}
-      <StringIndicator
-        strings={config.strings}
-        activeNote={tuner.note}
-        activeOctave={tuner.octave}
+      {/* Tuning graph */}
+      <TuningGraph
+        cents={tuner.cents}
+        note={tuner.note}
+        octave={tuner.octave}
+        inTune={tuner.inTune}
       />
+
+      {/* Instrument area */}
+      <div className="flex items-center justify-between px-2" style={{ minHeight: '144px' }}>
+        <div className="flex flex-col gap-3">
+          {leftStrings.map((s) => (
+            <StringCircle
+              key={`${s.note}${s.octave}`}
+              string={s}
+              isActive={tuner.note === s.note && tuner.octave === s.octave}
+            />
+          ))}
+        </div>
+
+        <HeadstockSVG pegPairs={pegPairs} />
+
+        <div className="flex flex-col gap-3">
+          {rightStrings.map((s) => (
+            <StringCircle
+              key={`${s.note}${s.octave}`}
+              string={s}
+              isActive={tuner.note === s.note && tuner.octave === s.octave}
+            />
+          ))}
+        </div>
+      </div>
 
       {/* Start/Stop button */}
       <div className="flex justify-center">
@@ -219,16 +272,6 @@ export default function TunerPage() {
           </Button>
         )}
       </div>
-
-      {/* In-tune pulse animation */}
-      {tuner.inTune && (
-        <div className="flex justify-center">
-          <div className="relative">
-            <div className="w-4 h-4 rounded-full bg-success animate-ping absolute" />
-            <div className="w-4 h-4 rounded-full bg-success" />
-          </div>
-        </div>
-      )}
     </div>
   );
 }
