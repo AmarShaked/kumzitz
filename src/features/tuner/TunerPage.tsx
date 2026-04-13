@@ -48,7 +48,9 @@ const INSTRUMENT_ORDER: Instrument[] = ['guitar', 'ukulele', 'ukulele-low-g'];
 
 function HeadstockSVG({ pegPairs }: { pegPairs: 2 | 3 }) {
   const bodyHeight = pegPairs * 22 + 16;
-  const totalHeight = 44 + bodyHeight;
+  const nutY = bodyHeight;
+  const neckY = bodyHeight + 5;
+  const totalHeight = neckY + 44;
   return (
     <svg
       width="56"
@@ -57,22 +59,22 @@ function HeadstockSVG({ pegPairs }: { pegPairs: 2 | 3 }) {
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
     >
-      {/* Neck */}
-      <rect x="20" y="0" width="16" height="44" rx="4" fill="#5c3a1e" />
+      {/* Headstock body at top */}
+      <rect x="7" y="0" width="42" height={bodyHeight} rx="9" fill="#7c4f2a" />
       {/* Nut */}
-      <rect x="17" y="40" width="22" height="5" rx="1" fill="#c8b89a" />
-      {/* Headstock body */}
-      <rect x="7" y="44" width="42" height={bodyHeight} rx="9" fill="#7c4f2a" />
+      <rect x="17" y={nutY} width="22" height="5" rx="1" fill="#c8b89a" />
+      {/* Neck going down */}
+      <rect x="20" y={neckY} width="16" height="44" rx="4" fill="#5c3a1e" />
       {/* Tuning pegs + strings */}
       {Array.from({ length: pegPairs }, (_, i) => {
-        const pegY = 62 + i * 22;
+        const pegY = 14 + i * 22;
         return (
           <g key={i}>
             <circle cx="8" cy={pegY} r="5" fill="#777" />
             <circle cx="8" cy={pegY} r="3" fill="#aaa" />
             <circle cx="48" cy={pegY} r="5" fill="#777" />
             <circle cx="48" cy={pegY} r="3" fill="#aaa" />
-            <line x1="28" y1="40" x2="28" y2={pegY} stroke="#c8b89a" strokeWidth="0.8" opacity="0.5" />
+            <line x1="28" y1={nutY} x2="28" y2={totalHeight} stroke="#c8b89a" strokeWidth="0.8" opacity="0.5" />
           </g>
         );
       })}
@@ -174,17 +176,24 @@ function TuningGraph({
 function StringCircle({
   string,
   isActive,
+  isSelected,
+  onClick,
 }: {
   string: TunerString;
   isActive: boolean;
+  isSelected: boolean;
+  onClick: () => void;
 }) {
   return (
-    <div
+    <button
+      onClick={onClick}
       className={`
         w-11 h-11 rounded-full flex items-center justify-center
         text-sm font-bold transition-all duration-300
-        ${isActive
-          ? 'bg-primary text-primary-foreground scale-110 shadow-lg'
+        ${isSelected
+          ? 'bg-primary text-primary-foreground scale-110 shadow-lg ring-2 ring-primary ring-offset-2 ring-offset-background'
+          : isActive
+          ? 'bg-primary/60 text-primary-foreground scale-105'
           : 'bg-secondary text-secondary-foreground'
         }
       `}
@@ -193,12 +202,13 @@ function StringCircle({
         <span>{string.note}</span>
         <span className="text-[9px] opacity-60">{string.octave}</span>
       </div>
-    </div>
+    </button>
   );
 }
 
 export default function TunerPage() {
   const [instrument, setInstrument] = useState<Instrument>('guitar');
+  const [selectedString, setSelectedString] = useState<TunerString | null>(null);
   const config = INSTRUMENT_CONFIGS[instrument];
   const tuner = useTuner(config.strings);
 
@@ -207,10 +217,27 @@ export default function TunerPage() {
   const rightStrings = config.strings.slice(half);
   const pegPairs = config.strings.length === 4 ? 2 : 3;
 
+  // In manual mode, compute cents relative to the selected string's target freq
+  const displayCents = selectedString && tuner.frequency
+    ? Math.max(-50, Math.min(50, Math.round(1200 * Math.log2(tuner.frequency / selectedString.freq))))
+    : tuner.cents;
+  const displayNote = selectedString ? selectedString.note : tuner.note;
+  const displayOctave = selectedString ? selectedString.octave : tuner.octave;
+  const displayInTune = selectedString && tuner.frequency
+    ? Math.abs(displayCents) <= 5
+    : tuner.inTune;
+
+  function handleStringClick(s: TunerString) {
+    setSelectedString((prev) =>
+      prev?.note === s.note && prev?.octave === s.octave ? null : s
+    );
+  }
+
   function handleInstrumentCycle() {
     const next =
       INSTRUMENT_ORDER[(INSTRUMENT_ORDER.indexOf(instrument) + 1) % INSTRUMENT_ORDER.length];
     if (tuner.isListening) tuner.stop();
+    setSelectedString(null);
     setInstrument(next);
   }
 
@@ -231,20 +258,22 @@ export default function TunerPage() {
 
       {/* Tuning graph */}
       <TuningGraph
-        cents={tuner.cents}
-        note={tuner.note}
-        octave={tuner.octave}
-        inTune={tuner.inTune}
+        cents={displayCents}
+        note={displayNote}
+        octave={displayOctave}
+        inTune={displayInTune}
       />
 
       {/* Instrument area */}
-      <div className="flex items-center justify-between px-2" style={{ minHeight: '144px' }}>
+      <div className="flex items-start justify-between px-2" style={{ minHeight: '144px' }}>
         <div className="flex flex-col gap-3">
           {leftStrings.map((s) => (
             <StringCircle
               key={`${s.note}${s.octave}`}
               string={s}
-              isActive={tuner.note === s.note && tuner.octave === s.octave}
+              isActive={!selectedString && tuner.note === s.note && tuner.octave === s.octave}
+              isSelected={selectedString?.note === s.note && selectedString?.octave === s.octave}
+              onClick={() => handleStringClick(s)}
             />
           ))}
         </div>
@@ -256,11 +285,20 @@ export default function TunerPage() {
             <StringCircle
               key={`${s.note}${s.octave}`}
               string={s}
-              isActive={tuner.note === s.note && tuner.octave === s.octave}
+              isActive={!selectedString && tuner.note === s.note && tuner.octave === s.octave}
+              isSelected={selectedString?.note === s.note && selectedString?.octave === s.octave}
+              onClick={() => handleStringClick(s)}
             />
           ))}
         </div>
       </div>
+
+      {/* Mode hint */}
+      <p className="text-center text-xs text-muted-foreground">
+        {selectedString
+          ? `מיתר נבחר: ${selectedString.note}${selectedString.octave} — לחץ שוב לביטול`
+          : 'לחץ על מיתר לכיוון ידני'}
+      </p>
 
       {/* Start/Stop button */}
       <div className="flex justify-center">
