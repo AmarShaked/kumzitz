@@ -32,6 +32,7 @@ export default function SongViewPage() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [wakeLock, setWakeLock] = useState<WakeLockSentinel | null>(null);
   const settingsRef = useRef<HTMLDivElement>(null);
+  const songContentRef = useRef<HTMLDivElement>(null);
 
   const allChords = useMemo(() => {
     if (!song) return [];
@@ -87,6 +88,16 @@ export default function SongViewPage() {
     URL.revokeObjectURL(url);
   };
 
+  const handlePrint = () => {
+    const el = songContentRef.current?.querySelector('.song-content');
+    if (el) {
+      // A4 printable height ≈ 257mm (297mm - 2×1.5cm margin + header) ≈ 970px at 96dpi
+      const fitsOnePage = el.scrollHeight <= 970;
+      el.classList.toggle('print-two-cols', !fitsOnePage);
+    }
+    window.print();
+  };
+
   const handleExportChordPro = () => {
     const header = `{title: ${song.title}}\n{artist: ${song.artist}}\n{key: ${song.originalKey}}\n`;
     const blob = new Blob([header + song.content], { type: 'text/plain' });
@@ -135,7 +146,7 @@ export default function SongViewPage() {
         <Button variant={simplified ? 'default' : 'secondary'} size="sm" onClick={handleSimplify}>
           {simplified ? 'ביטול פישוט' : 'פשט אקורדים'}
         </Button>
-        <Button variant="secondary" size="sm" className="hidden sm:inline-flex" onClick={() => window.print()}>הדפסה</Button>
+        <Button variant="secondary" size="sm" className="hidden sm:inline-flex" onClick={handlePrint}>הדפסה</Button>
         <Button variant="secondary" size="sm" onClick={() => setPerformanceMode(true)}>מצב הופעה</Button>
 
         <div className="relative" ref={settingsRef}>
@@ -204,7 +215,7 @@ export default function SongViewPage() {
         </div>
       </div>
 
-      <div className="rounded-lg bg-muted/30 p-4 sm:p-6">
+      <div ref={songContentRef} className="rounded-lg bg-muted/30 p-4 sm:p-6">
         <SongRenderer content={song.content} transpose={transpose} simplify={simplified} fontSize={fontSize} onChordHover={onChordHover} onChordLeave={onChordLeave} />
       </div>
       <ChordTooltipOverlay tooltip={tooltip} />

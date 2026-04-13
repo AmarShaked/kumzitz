@@ -153,11 +153,14 @@
 
   .song-content {
     line-height: 1.8 !important;
+    orphans: 3;
+    widows: 3;
+  }
+
+  .song-content.print-two-cols {
     columns: 2;
     column-gap: 2cm;
     column-rule: none;
-    orphans: 3;
-    widows: 3;
   }
 
   /* Keep section breaks (empty lines) from splitting across columns */
