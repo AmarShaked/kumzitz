@@ -1,7 +1,8 @@
 import { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useSongList, useCreateSong } from './hooks/useSongs';
+import { useSongList, useTopArtists, useCreateSong } from './hooks/useSongs';
 import SongCard from './SongCard';
+import ArtistsSidebar from './ArtistsSidebar';
 import { parseDirectives } from '../../lib/chordpro';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -9,7 +10,12 @@ import type { Song } from '../../types/song';
 
 export default function SongListPage() {
   const [search, setSearch] = useState('');
-  const { data, isLoading, error } = useSongList(search || undefined);
+  const [selectedArtist, setSelectedArtist] = useState<string | null>(null);
+  const { data, isLoading, error } = useSongList(
+    search || undefined,
+    selectedArtist ?? undefined,
+  );
+  const { data: topArtists = [], isLoading: artistsLoading } = useTopArtists();
   const navigate = useNavigate();
   const { mutateAsync: create } = useCreateSong();
   const jsonInputRef = useRef<HTMLInputElement>(null);
@@ -48,7 +54,15 @@ export default function SongListPage() {
   };
 
   return (
-    <div className="mx-auto max-w-3xl p-6 space-y-6">
+    <div className="mx-auto max-w-5xl p-4 sm:p-6 flex flex-col md:flex-row gap-6 md:gap-8">
+      <ArtistsSidebar
+        artists={topArtists}
+        selected={selectedArtist}
+        onSelect={setSelectedArtist}
+        isLoading={artistsLoading}
+        className="md:w-52 shrink-0 md:sticky md:top-6 md:self-start border border-border rounded-lg p-4 bg-card"
+      />
+      <div className="flex-1 min-w-0 space-y-6">
       <Input type="search" placeholder="חפש שיר או אמן..."
         value={search} onChange={(e) => setSearch(e.target.value)}
         className="h-12" />
@@ -64,8 +78,11 @@ export default function SongListPage() {
         {data?.items.map((song) => <SongCard key={song.id} song={song} />)}
       </div>
       {data?.items.length === 0 && !isLoading && (
-        <p className="text-center text-muted-foreground">לא נמצאו שירים</p>
+        <p className="text-center text-muted-foreground">
+          {selectedArtist ? `לא נמצאו שירים של ${selectedArtist}` : 'לא נמצאו שירים'}
+        </p>
       )}
+      </div>
     </div>
   );
 }

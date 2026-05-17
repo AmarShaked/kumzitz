@@ -1,10 +1,18 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { getSongs, getSong, createSong, updateSong, deleteSong } from '../../../services/api';
+import { getSongs, getSong, getTopArtists, createSong, updateSong, deleteSong } from '../../../services/api';
 
-export function useSongList(search?: string) {
+export function useSongList(search?: string, artist?: string) {
   return useQuery({
-    queryKey: ['songs', { search }],
-    queryFn: () => getSongs({ search }),
+    queryKey: ['songs', { search, artist }],
+    queryFn: () => getSongs({ search, artist }),
+  });
+}
+
+export function useTopArtists() {
+  return useQuery({
+    queryKey: ['artists', 'top'],
+    queryFn: () => getTopArtists(),
+    staleTime: 60_000,
   });
 }
 
@@ -22,6 +30,7 @@ export function useCreateSong() {
     mutationFn: createSong,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['songs'] });
+      queryClient.invalidateQueries({ queryKey: ['artists', 'top'] });
     },
   });
 }
@@ -34,6 +43,7 @@ export function useUpdateSong() {
     onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ['songs', variables.id] });
       queryClient.invalidateQueries({ queryKey: ['songs'] });
+      queryClient.invalidateQueries({ queryKey: ['artists', 'top'] });
     },
   });
 }
@@ -44,6 +54,7 @@ export function useDeleteSong() {
     mutationFn: deleteSong,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['songs'] });
+      queryClient.invalidateQueries({ queryKey: ['artists', 'top'] });
     },
   });
 }
