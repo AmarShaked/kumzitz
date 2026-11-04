@@ -8,8 +8,7 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test": "vitest run",
-    "setup:pb": "tsx scripts/setup-pocketbase.ts"
+    "test": "vitest run"
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.2.4",
@@ -18,7 +17,6 @@
     "clsx": "^2.1.1",
     "lucide-react": "^1.7.0",
     "pitchfinder": "^2.3.4",
-    "pocketbase": "^0.26.8",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "react-router-dom": "^7.13.2",

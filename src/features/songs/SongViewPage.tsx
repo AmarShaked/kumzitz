@@ -4,11 +4,11 @@ import { useSong, useDeleteSong } from './hooks/useSongs';
 import SongRenderer from '../../components/SongRenderer';
 import TransposeControls from '../transpose/TransposeControls';
 import { useChordTooltip, ChordTooltipOverlay } from '../chords/ChordTooltip';
-import { pb } from '../../services/pocketbase';
 import PerformanceMode from '../performance/PerformanceMode';
 import { Button } from '@/components/ui/button';
 import { parseChordPro } from '../../lib/chordpro';
-import { findEasiestTranspose } from '../../lib/transpose';
+import { buildChordMapper } from '../../lib/simplify';
+import ChordStrip from '../chords/ChordStrip';
 import { Settings } from 'lucide-react';
 import { useInstrument, type Instrument } from '@/hooks/useInstrument';
 
@@ -24,7 +24,8 @@ export default function SongViewPage() {
   const { data: song, isLoading, error } = useSong(id!);
   const { mutateAsync: removeSong } = useDeleteSong();
   const [transpose, setTranspose] = useState(0);
-  const [simplified, setSimplified] = useState(false);
+  const [three, setThree] = useState(() => localStorage.getItem('kumzitz-three') === '1');
+  const [easy, setEasy] = useState(() => localStorage.getItem('kumzitz-easy') === '1');
   const [fontSize, setFontSize] = useState(18);
   const { tooltip, onChordHover, onChordLeave } = useChordTooltip();
   const [performanceMode, setPerformanceMode] = useState(false);
@@ -44,6 +45,39 @@ export default function SongViewPage() {
     return () => { wakeLock?.release().catch(() => {}); };
   }, [wakeLock]);
 
+  // remember the player's preference across songs
+  useEffect(() => {
+    try {
+      localStorage.setItem('kumzitz-three', three ? '1' : '0');
+      localStorage.setItem('kumzitz-easy', easy ? '1' : '0');
+    } catch { /* storage blocked */ }
+  }, [three, easy]);
+
+  const mapper = useMemo(
+    () => buildChordMapper(allChords, { transpose, three, easy, instrument }),
+    [allChords, transpose, three, easy, instrument],
+  );
+
+  // the chords you'll play, in the order they first appear
+  const shownChords = useMemo(() => {
+    const seen: string[] = [];
+    for (const c of allChords) {
+      const m = mapper.map(c);
+      if (!seen.includes(m)) seen.push(m);
+    }
+    return seen;
+  }, [allChords, mapper]);
+
+  const easyBadge = !easy ? ''
+    : instrument === 'guitar' ? (mapper.capo ? `קאפו ${mapper.capo}` : 'בלי קאפו')
+    : mapper.keyShift ? 'הועבר לסולם קל' : '';
+  // everything that changes what's shown, carried into performance mode
+  const activeModes = [
+    three && '3 אקורדים',
+    easy && (easyBadge || 'קל לנגינה'),
+    transpose !== 0 && `טרנספוזיציה ${transpose > 0 ? '+' : ''}${transpose}`,
+  ].filter(Boolean) as string[];
+
   useEffect(() => {
     if (!settingsOpen) return;
     const handleClick = (e: MouseEvent) => {
@@ -58,18 +92,7 @@ export default function SongViewPage() {
   if (isLoading) return <p className="p-8 text-center text-muted-foreground">טוען...</p>;
   if (error || !song) return <p className="p-8 text-center text-destructive">השיר לא נמצא</p>;
 
-  const isAuthor = pb.authStore.record?.id === song.author;
-
-  const handleSimplify = () => {
-    if (simplified) {
-      setSimplified(false);
-      setTranspose(0);
-    } else {
-      const best = findEasiestTranspose(allChords);
-      setTranspose(best);
-      setSimplified(true);
-    }
-  };
+  const isAuthor = true; // every song on this phone is yours
 
   const handleDelete = async () => {
     if (confirm('למחוק את השיר?')) {
@@ -116,6 +139,8 @@ export default function SongViewPage() {
         title={song.title}
         content={song.content}
         originalKey={song.originalKey}
+        mapChord={mapper.map}
+        modes={activeModes}
         onExit={() => setPerformanceMode(false)}
       />
     )}
@@ -143,9 +168,15 @@ export default function SongViewPage() {
 
       <div className="flex items-center gap-2 sm:gap-3 flex-wrap print:hidden">
         <TransposeControls transpose={transpose} onTransposeChange={setTranspose} originalKey={song.originalKey} />
-        <Button variant={simplified ? 'default' : 'secondary'} size="sm" onClick={handleSimplify}>
-          {simplified ? 'ביטול פישוט' : 'פשט אקורדים'}
+        <Button variant={three ? 'default' : 'secondary'} size="sm" aria-pressed={three} onClick={() => setThree(!three)}>
+          3 אקורדים
         </Button>
+        <Button variant={easy ? 'default' : 'secondary'} size="sm" aria-pressed={easy} onClick={() => setEasy(!easy)}>
+          קל לנגינה
+        </Button>
+        {easyBadge && (
+          <span className="rounded-md bg-chord/20 text-chord px-2 py-1 text-sm font-bold">{easyBadge}</span>
+        )}
         <Button variant="secondary" size="sm" className="hidden sm:inline-flex" onClick={handlePrint}>הדפסה</Button>
         <Button variant="secondary" size="sm" onClick={() => setPerformanceMode(true)}>מצב הופעה</Button>
 
@@ -215,8 +246,10 @@ export default function SongViewPage() {
         </div>
       </div>
 
+      <ChordStrip chords={three && mapper.three.length ? mapper.three : shownChords} title={three ? 'שלושת האקורדים (I · IV · V)' : 'האקורדים בשיר'} />
+
       <div ref={songContentRef} className="rounded-lg bg-muted/30 p-4 sm:p-6">
-        <SongRenderer content={song.content} transpose={transpose} simplify={simplified} fontSize={fontSize} onChordHover={onChordHover} onChordLeave={onChordLeave} />
+        <SongRenderer content={song.content} mapChord={mapper.map} fontSize={fontSize} onChordHover={onChordHover} onChordLeave={onChordLeave} />
       </div>
       <ChordTooltipOverlay tooltip={tooltip} />
     </div>

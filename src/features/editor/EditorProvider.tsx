@@ -41,7 +41,7 @@ export default function EditorProvider({ children, initialState }: EditorProvide
   const [content, setContent] = useState(initialState?.content ?? '');
   const [originalKey, setOriginalKey] = useState(initialState?.originalKey ?? '');
   const [bpm, setBpm] = useState(initialState?.bpm?.toString() ?? '');
-  const [isPublic, setIsPublic] = useState(initialState?.isPublic ?? true);
+  const [isPublic, setIsPublic] = useState(initialState?.isPublic ?? false);
   const [cursorPosition, setCursorPosition] = useState(0);
 
   const insertChordAtCursor = useCallback(

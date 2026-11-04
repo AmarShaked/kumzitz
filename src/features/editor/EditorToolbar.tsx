@@ -9,7 +9,7 @@ const KEYS = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B',
               'Am', 'Bm', 'Cm', 'Dm', 'Em', 'Fm', 'Gm'];
 
 export default function EditorToolbar() {
-  const { state, setTitle, setArtist, setOriginalKey, setBpm, setIsPublic, insertChordAtCursor } = useEditor();
+  const { state, setTitle, setArtist, setOriginalKey, setBpm, insertChordAtCursor } = useEditor();
   const [chordPickerOpen, setChordPickerOpen] = useState(false);
 
   return (
@@ -26,10 +26,6 @@ export default function EditorToolbar() {
           {KEYS.map((k) => <option key={k} value={k}>{k}</option>)}
         </select>
         <Input type="number" placeholder="BPM" value={state.bpm} onChange={(e) => setBpm(e.target.value)} className="w-20" />
-        <label className="flex items-center gap-2 text-sm text-muted-foreground cursor-pointer">
-          <input type="checkbox" checked={state.isPublic} onChange={(e) => setIsPublic(e.target.checked)} className="rounded" />
-          ציבורי
-        </label>
         <div className="relative">
           <Button size="sm" onClick={() => setChordPickerOpen(!chordPickerOpen)}>
             הוסף אקורד

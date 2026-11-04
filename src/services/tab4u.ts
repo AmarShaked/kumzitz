@@ -7,13 +7,26 @@ type Tab4uResult = {
 /**
  * Extract the song path from a tab4u URL.
  */
-function extractPath(url: string): string {
-  const cleaned = url.trim();
-  const match = cleaned.match(/tab4u\.com(\/tabs\/songs\/\S+)/i);
-  if (!match) throw new Error('לא זוהה קישור תקין של tab4u');
-  let path = match[1];
+export function extractPath(input: string): string {
+  // accept a bare link, or text that contains one (e.g. from the phone's share sheet)
+  const found = input.trim().match(/https?:\/\/[^\s]*tab4u\.com\/[^\s]*/i)?.[0] ?? input.trim();
+  let url: URL;
+  try {
+    url = new URL(found);
+  } catch {
+    throw new Error('לא זוהה קישור תקין של tab4u');
+  }
+  if (!/(^|\.)tab4u\.com$/i.test(url.hostname) || !url.pathname.startsWith('/tabs/songs/')) {
+    throw new Error('לא זוהה קישור תקין של tab4u');
+  }
+  let path = url.pathname;
   if (!path.endsWith('.html')) path += '.html';
   return path;
+}
+
+/** Canonical link for a song (used to recognise songs that were already added). */
+export function canonicalTab4uUrl(input: string): string {
+  return `https://www.tab4u.com${extractPath(input)}`;
 }
 
 function decodeHtmlEntities(text: string): string {
@@ -110,11 +123,14 @@ function buildChordProLine(
 /**
  * Parse the raw HTML of a tab4u song page into ChordPro format.
  */
-function parseTab4uHtml(html: string): Tab4uResult {
-  // Extract title and artist from h1
+export function parseTab4uHtml(html: string): Tab4uResult {
+  // Title and artist: the page <title> is "אקורדים לשיר {title} - {artist} | Tab4U";
+  // fall back to the older <h1> layout.
+  const titleTag = html.match(/<title>\s*אקורדים לשיר\s+(.+)\s+-\s+([^|<]+?)\s*(?:\||<\/title>)/);
   const h1Match = html.match(/<h1>.*?אקורדים לשיר\s+(.+?)\s+של\s+.*?>(.*?)<\/a>/);
-  const title = h1Match ? decodeHtmlEntities(h1Match[1].replace(/<[^>]*>/g, '').trim()) : '';
-  const artist = h1Match ? decodeHtmlEntities(h1Match[2].trim()) : '';
+  const pick = titleTag ?? h1Match;
+  const title = pick ? decodeHtmlEntities(pick[1].replace(/<[^>]*>/g, '').trim()) : '';
+  const artist = pick ? decodeHtmlEntities(pick[2].replace(/<[^>]*>/g, '').trim()) : '';
 
   // Extract the songContentTPL div
   const contentMatch = html.match(/<div id="songContentTPL"[^>]*>([\s\S]*?)(?:<\/div>\s*<\/div>\s*<\/div>|<div class="song_block_bottom")/);
@@ -175,7 +191,9 @@ function parseTab4uHtml(html: string): Tab4uResult {
 
 /**
  * Fetch a tab4u song page and convert it to ChordPro.
- * Uses the Vite dev proxy at /api/tab4u to bypass CORS.
+ * The page is fetched through our own /api/tab4u route (Vite proxy in dev, a Vercel
+ * rewrite in production) because browsers block reading other sites directly.
+ * Used with tab4u's permission.
  */
 export async function importFromTab4u(url: string): Promise<Tab4uResult> {
   const path = extractPath(url);

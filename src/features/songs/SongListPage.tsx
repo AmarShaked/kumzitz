@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useSongList, useTopArtists, useCreateSong } from './hooks/useSongs';
 import SongCard from './SongCard';
 import ArtistsSidebar from './ArtistsSidebar';
+import AddFromTab4u from './AddFromTab4u';
 import { parseDirectives } from '../../lib/chordpro';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -32,7 +33,7 @@ export default function SongListPage() {
       content: data.content ?? '',
       originalKey: data.originalKey ?? '',
       bpm: data.bpm ?? null,
-      isPublic: data.isPublic ?? true,
+      isPublic: false,
     });
     navigate(`/song/${created.id}`);
   };
@@ -63,6 +64,7 @@ export default function SongListPage() {
         className="md:w-52 shrink-0 md:sticky md:top-6 md:self-start border border-border rounded-lg p-4 bg-card"
       />
       <div className="flex-1 min-w-0 space-y-6">
+      <AddFromTab4u />
       <Input type="search" placeholder="חפש שיר או אמן..."
         value={search} onChange={(e) => setSearch(e.target.value)}
         className="h-12" />
@@ -79,7 +81,9 @@ export default function SongListPage() {
       </div>
       {data?.items.length === 0 && !isLoading && (
         <p className="text-center text-muted-foreground">
-          {selectedArtist ? `לא נמצאו שירים של ${selectedArtist}` : 'לא נמצאו שירים'}
+          {selectedArtist ? `לא נמצאו שירים של ${selectedArtist}`
+            : search ? 'לא נמצאו שירים'
+            : 'עוד אין שירים בטלפון הזה. הדביקו למעלה קישור לשיר מ-tab4u.'}
         </p>
       )}
       </div>

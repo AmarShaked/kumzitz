@@ -21,6 +21,8 @@ export type Song = {
   originalKey: string;
   bpm: number | null;
   isPublic: boolean;
+  /** Where the song came from, e.g. its tab4u link (used to avoid duplicate imports). */
+  source?: string;
   author: string;
   created: string;
   updated: string;

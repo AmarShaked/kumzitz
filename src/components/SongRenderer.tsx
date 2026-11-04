@@ -6,6 +6,8 @@ type SongRendererProps = {
   content: string;
   transpose?: number;
   simplify?: boolean;
+  /** Final say on how each chord is shown (4-chords / easy shapes). */
+  mapChord?: (chord: string) => string;
   fontSize?: number;
   onChordHover?: (chord: string, rect: DOMRect) => void;
   onChordLeave?: () => void;
@@ -54,6 +56,7 @@ export default function SongRenderer({
   content,
   transpose = 0,
   simplify = false,
+  mapChord,
   fontSize = 18,
   onChordHover,
   onChordLeave,
@@ -66,6 +69,7 @@ export default function SongRenderer({
         let segments = line.segments;
         if (transpose !== 0) segments = transposeSegments(segments, transpose);
         if (simplify) segments = applySimplify(segments);
+        if (mapChord) segments = segments.map((seg) => ({ ...seg, chord: seg.chord ? mapChord(seg.chord) : null }));
         return (
         <div key={lineIndex} className={segments.length === 0 ? 'h-6' : 'leading-loose'}>
           {segments.map((segment, segIndex) => (

@@ -7,10 +7,15 @@ type PerformanceModeProps = {
   title: string;
   content: string;
   originalKey?: string;
+  /** Chords as chosen on the song page (transpose / 4 chords / easy shapes). */
+  mapChord?: (chord: string) => string;
+  /** Active modes from the song page, e.g. ["3 אקורדים", "קאפו 5"]: shown so you know
+   *  what you're looking at (and remember the capo). */
+  modes?: string[];
   onExit: () => void;
 };
 
-export default function PerformanceMode({ title, content, originalKey, onExit }: PerformanceModeProps) {
+export default function PerformanceMode({ title, content, originalKey, mapChord, modes = [], onExit }: PerformanceModeProps) {
   const [transpose, setTranspose] = useState(0);
   const [fontSize, setFontSize] = useState(() => {
     return Number(localStorage.getItem('kumzitz-perf-font-size')) || 24;
@@ -69,7 +74,10 @@ export default function PerformanceMode({ title, content, originalKey, onExit }:
       <div className="flex items-center justify-between px-3 sm:px-6 py-2 sm:py-3 bg-card border-b border-border shrink-0 gap-2 flex-wrap">
         <h2 className="text-base sm:text-xl font-bold truncate max-w-[40%]">{title}</h2>
         <div className="flex items-center gap-2 sm:gap-4 flex-wrap">
-          <TransposeControls transpose={transpose} onTransposeChange={setTranspose} originalKey={originalKey} />
+          {modes.map((m) => (
+            <span key={m} className="rounded-md bg-chord/20 text-chord px-2 py-1 text-sm font-bold">{m}</span>
+          ))}
+          {!mapChord && <TransposeControls transpose={transpose} onTransposeChange={setTranspose} originalKey={originalKey} />}
           <div className="flex items-center gap-1">
             <Button variant="secondary" size="icon" className="w-8 h-8"
               onClick={() => setFontSize((s) => Math.max(14, s - 2))}>א-</Button>
@@ -95,7 +103,7 @@ export default function PerformanceMode({ title, content, originalKey, onExit }:
         </div>
       </div>
       <div ref={containerRef} className="flex-1 overflow-auto p-4 sm:p-8">
-        <SongRenderer content={content} transpose={transpose} fontSize={fontSize} />
+        <SongRenderer content={content} transpose={mapChord ? 0 : transpose} mapChord={mapChord} fontSize={fontSize} />
       </div>
     </div>
   );

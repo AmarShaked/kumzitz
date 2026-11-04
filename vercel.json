@@ -1,3 +1,6 @@
 {
-  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
+  "rewrites": [
+    { "source": "/api/tab4u/:path*", "destination": "https://www.tab4u.com/:path*" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
 }
