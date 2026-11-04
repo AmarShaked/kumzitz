@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { canonicalTab4uUrl, importFromTab4u } from '@/services/tab4u';
 import { findSongBySource } from '@/services/api';
 import { detectKey } from '@/lib/simplify';
-import { useCreateSong } from './hooks/useSongs';
+import { useCreateSong, useUpdateSong } from './hooks/useSongs';
 
 type Props = {
   /** Pre-filled link or shared text (from the phone's share sheet). */
@@ -21,6 +21,7 @@ export default function AddFromTab4u({ initial = '', autoStart = false }: Props)
   const [error, setError] = useState('');
   const navigate = useNavigate();
   const { mutateAsync: create } = useCreateSong();
+  const { mutateAsync: update } = useUpdateSong();
   const started = useRef(false);
 
   const add = async (value: string) => {
@@ -30,12 +31,23 @@ export default function AddFromTab4u({ initial = '', autoStart = false }: Props)
     try {
       const source = canonicalTab4uUrl(value);
       const existing = await findSongBySource(source);
-      if (existing) {
+      // already on the phone with chords: just open it (an older import may have no chords)
+      if (existing && /\[[^\]]+\]/.test(existing.content)) {
         navigate(`/song/${existing.id}`);
         return;
       }
       const result = await importFromTab4u(source);
       const chords = [...result.content.matchAll(/\[([^\]]+)\]/g)].map((m) => m[1]);
+      if (existing) {
+        await update({ id: existing.id, data: {
+          title: result.title || existing.title,
+          artist: result.artist || existing.artist,
+          content: result.content,
+          originalKey: detectKey(chords)?.name ?? '',
+        } });
+        navigate(`/song/${existing.id}`);
+        return;
+      }
       const song = await create({
         title: result.title || 'ללא שם',
         artist: result.artist || 'לא ידוע',

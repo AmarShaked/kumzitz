@@ -56,3 +56,31 @@ describe('parseTab4uHtml title', () => {
     expect(r.artist).toBe('זמר בדיקה');
   });
 });
+
+// English (left-to-right) songs use <td class="chords_en"> and must not be mirrored.
+const PAGE_EN = `<title>אקורדים לשיר Test Song - Test Band | Tab4U</title>
+<div class="song_block ltrS"><div id="songContentTPL"><table><tr><td class="chords_en"><span class="c_C">G</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="c_C">D</span></td></tr>
+<tr><td class="song">Hello my friend</td></tr></table>
+</div></div></div>`;
+
+describe('parseTab4uHtml (English songs)', () => {
+  it('keeps the chords of left-to-right songs, over the right words', () => {
+    const r = parseTab4uHtml(PAGE_EN);
+    expect(r.title).toBe('Test Song');
+    expect(r.artist).toBe('Test Band');
+    expect(r.content.split('\n')[0]).toBe('[G]Hello [D]my friend');
+  });
+});
+
+// A Hebrew line inside an English song: the Hebrew runs right-to-left in a left-aligned
+// cell, so the visual chord column x sits over character (length - x - chordLength).
+const PAGE_MIXED = `<title>אקורדים לשיר Mixed - Band | Tab4U</title>
+<div class="song_block ltrS"><div id="songContentTPL"><table><tr><td class="chords_en"><span class="c_C">G</span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="c_C">D</span></td></tr>
+<tr><td class="song">אבגדה וזחט</td></tr></table>
+</div></div></div>`;
+
+describe('parseTab4uHtml (Hebrew line in an English song)', () => {
+  it('mirrors chord positions against the Hebrew lyric', () => {
+    expect(parseTab4uHtml(PAGE_MIXED).content.split('\n')[0]).toBe('אבג[D]דה וזח[G]ט');
+  });
+});

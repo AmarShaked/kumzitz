@@ -52,6 +52,15 @@ function applySimplify(segments: ChordSegment[]): ChordSegment[] {
   }));
 }
 
+/** Hebrew songs read right-to-left, English ones left-to-right (decided by the lyrics). */
+export function songDirection(content: string, fallback: 'rtl' | 'ltr' = 'rtl'): 'rtl' | 'ltr' {
+  const lyrics = content.replace(/\[[^\]]*\]/g, '');
+  const hebrew = (lyrics.match(/[\u0590-\u05FF]/g) ?? []).length;
+  const latin = (lyrics.match(/[A-Za-z]/g) ?? []).length;
+  if (!hebrew && !latin) return fallback;
+  return latin > hebrew ? 'ltr' : 'rtl';
+}
+
 export default function SongRenderer({
   content,
   transpose = 0,
@@ -62,16 +71,18 @@ export default function SongRenderer({
   onChordLeave,
 }: SongRendererProps) {
   const lines = parseChordPro(content);
+  const dir = songDirection(content);
 
   return (
-    <div className="song-content" dir="rtl" style={{ fontSize: `${fontSize}px` }}>
+    <div className="song-content" dir={dir} style={{ fontSize: `${fontSize}px` }}>
       {lines.map((line, lineIndex) => {
         let segments = line.segments;
         if (transpose !== 0) segments = transposeSegments(segments, transpose);
         if (simplify) segments = applySimplify(segments);
         if (mapChord) segments = segments.map((seg) => ({ ...seg, chord: seg.chord ? mapChord(seg.chord) : null }));
         return (
-        <div key={lineIndex} className={segments.length === 0 ? 'h-6' : 'leading-loose'}>
+        <div key={lineIndex} dir={songDirection(segments.map((g) => g.text).join(''), dir)}
+          className={segments.length === 0 ? 'h-6' : 'leading-loose'}>
           {segments.map((segment, segIndex) => (
             <ChordSegmentSpan
               key={segIndex}

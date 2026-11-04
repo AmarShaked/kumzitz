@@ -47,7 +47,7 @@ function decodeHtmlEntities(text: string): string {
  * To align chords with lyrics, we mirror:
  *   mirrored_offset = totalTextLen - source_offset - chord_name_length
  */
-function parseChordsWithPositions(html: string): { chord: string; offset: number }[] {
+function parseChordsWithPositions(html: string, mirror = true): { chord: string; offset: number }[] {
   const raw: { chord: string; offset: number; len: number }[] = [];
   let textPos = 0;
   let remaining = html;
@@ -76,10 +76,16 @@ function parseChordsWithPositions(html: string): { chord: string; offset: number
 
   const totalLen = textPos;
 
-  // Mirror offsets for RTL and sort ascending
+  // Hebrew (RTL) songs: mirror offsets; English (LTR) songs: positions are already right
   return raw
-    .map((c) => ({ chord: c.chord, offset: totalLen - c.offset - c.len }))
+    .map((c) => ({ chord: c.chord, offset: mirror ? totalLen - c.offset - c.len : c.offset }))
     .sort((a, b) => a.offset - b.offset);
+}
+
+function isMostlyHebrew(text: string): boolean {
+  const hebrew = (text.match(/[\u0590-\u05FF]/g) ?? []).length;
+  const latin = (text.match(/[A-Za-z]/g) ?? []).length;
+  return hebrew > latin;
 }
 
 /**
@@ -144,7 +150,8 @@ export function parseTab4uHtml(html: string): Tab4uResult {
   const lines: string[] = [];
 
   for (const table of tables) {
-    const rows = [...table.matchAll(/<tr>\s*<td class="(chords|song)">([\s\S]*?)<\/td>\s*<\/tr>/g)];
+    // Hebrew songs mark chord rows "chords"; English (left-to-right) songs use "chords_en"
+    const rows = [...table.matchAll(/<tr>\s*<td class="(chords|chords_en|song)">([\s\S]*?)<\/td>\s*<\/tr>/g)];
     if (rows.length === 0) continue;
 
     let i = 0;
@@ -152,8 +159,8 @@ export function parseTab4uHtml(html: string): Tab4uResult {
       const rowType = rows[i][1];
       const rowContent = rows[i][2];
 
-      if (rowType === 'chords') {
-        const chords = parseChordsWithPositions(rowContent);
+      if (rowType === 'chords' || rowType === 'chords_en') {
+        let chords = parseChordsWithPositions(rowContent, rowType === 'chords');
 
         // Check if next row is lyrics
         const nextRow = rows[i + 1];
@@ -162,6 +169,14 @@ export function parseTab4uHtml(html: string): Tab4uResult {
             .replace(/&nbsp;/g, ' ')
             .replace(/<[^>]*>/g, '')
             .trim();
+
+          // A Hebrew line inside an English (left-to-right) song runs right-to-left from
+          // the left edge, so visual column x sits over character (length - x - chordLength).
+          if (rowType === 'chords_en' && isMostlyHebrew(lyricText)) {
+            chords = chords
+              .map((c) => ({ chord: c.chord, offset: Math.max(0, lyricText.length - c.offset - c.chord.length) }))
+              .sort((a, b) => a.offset - b.offset);
+          }
 
           lines.push(buildChordProLine(chords, lyricText));
           i += 2;
