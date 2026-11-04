@@ -20,6 +20,9 @@ describe('detectKey', () => {
   it('finds a major key', () => {
     expect(detectKey(['G', 'D', 'Em', 'C', 'G', 'D', 'C', 'G'])?.name).toBe('G');
   });
+  it('prefers the key whose I, IV and V the song actually uses (pop loop vi-IV-I-V)', () => {
+    expect(detectKey('Am F C G Am F C G'.split(' '))?.name).toBe('C');
+  });
   it('returns null for no chords', () => {
     expect(detectKey([])).toBeNull();
   });
@@ -116,4 +119,39 @@ describe('buildChordMapper', () => {
     const m = buildChordMapper(['C', 'G'], { transpose: 2, three: false, easy: false, instrument: 'guitar' });
     expect(m.map('C')).toBe('D');
   });
+
+  it('keeps a 4th chord the song leans on (>= 20% of its chords)', () => {
+    const pop = 'Am F C G Am F C G C G Am F'.split(' ');
+    const m = buildChordMapper(pop, { transpose: 0, three: true, easy: false, instrument: 'guitar' });
+    expect(pop.map(m.map)).toEqual(pop); // vi-IV-I-V stays exactly as written
+    expect(m.three).toEqual(['C', 'F', 'G']);
+    expect(m.extra).toBe('Am');
+  });
+
+  it('does not keep a 4th chord that is only used now and then', () => {
+    const m = buildChordMapper(MINOR_SONG, { transpose: 0, three: true, easy: false, instrument: 'guitar' });
+    expect(m.extra).toBeNull(); // F and Bb are each well under 20% of Hashivenu-like song
+    expect(new Set(MINOR_SONG.map(m.map)).size).toBe(3);
+  });
+
+  it('the kept 4th chord also gets easy shapes', () => {
+    const pop = 'Bm G D A Bm G D A'.split(' '); // D major: vi-IV-I-V
+    const m = buildChordMapper(pop, { transpose: 0, three: true, easy: true, instrument: 'guitar' });
+    expect(m.extra).not.toBeNull();
+    expect(new Set(pop.map(m.map)).size).toBe(4);
+  });
+
+  it('turning 1·4·5 on keeps the same capo and shapes (it only removes chords)', () => {
+    // Zusha-like song in Db: easy alone gives capo 1 (C F G Em Am)
+    const song = 'Db Gb Db Ab4 Fm Gb Bbm7 Gbmaj7 Ab Fm7 Bbm Db/F Db Gb Ab Bbm Fm Gb Db Ab'.split(' ');
+    for (const instrument of ['guitar', 'piano'] as const) {
+      const easy = buildChordMapper(song, { transpose: 0, three: false, easy: true, instrument });
+      const both = buildChordMapper(song, { transpose: 0, three: true, easy: true, instrument });
+      expect(both.capo).toBe(easy.capo);
+      expect(both.keyShift).toBe(easy.keyShift);
+      const easyShapes = new Set(song.map(easy.map));
+      for (const c of new Set(song.map(both.map))) expect(easyShapes).toContain(c);
+    }
+  });
 });
+

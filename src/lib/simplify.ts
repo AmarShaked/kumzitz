@@ -56,7 +56,11 @@ export function detectKey(chords: string[]): SongKey | null {
       const fit = triads.filter((t) => diatonic(t, tonic, mode)).length / triads.length;
       const share = triads.filter(isTonic).length / triads.length;
       const ends = 0.3 * +isTonic(triads[triads.length - 1]) + 0.25 * +isTonic(triads[0]);
-      const score = fit + share + ends;
+      // tie-break between relative keys (Am F C G is C major's vi-IV-I-V, not A minor):
+      // prefer the key whose I, IV and V the song actually plays
+      const roots = new Set(triads.map((t) => t.root));
+      const coverage = [tonic, (tonic + 5) % 12, (tonic + 7) % 12].filter((r) => roots.has(r)).length / 3;
+      const score = fit + share + ends + 0.5 * coverage;
       if (score > bestScore) {
         bestScore = score;
         const k = { tonic, mode, name: '' } as SongKey;
@@ -123,6 +127,51 @@ export function primaryChords(chords: string[], key: SongKey | null): Triad[] {
   ];
 }
 
+const EXTRA_SHARE = 0.2;
+
+function relativeKey(k: SongKey): SongKey {
+  const minor = k.mode === 'major';
+  const tonic = (k.tonic + (minor ? 9 : 3)) % 12;
+  const r = { tonic, mode: minor ? 'minor' : 'major', name: '' } as SongKey;
+  r.name = triadName({ root: tonic, q: minor ? 'min' : 'maj' }, usesFlats(r));
+  return r;
+}
+
+/** How many of a key's I, IV, V roots the song actually plays (0–3). */
+function primariesPlayed(triads: Triad[], k: SongKey): number {
+  const roots = new Set(triads.map((t) => t.root));
+  return [k.tonic, (k.tonic + 5) % 12, (k.tonic + 7) % 12].filter((r) => roots.has(r)).length;
+}
+
+/** Read the song in its key, or in the relative major/minor when the song plays more of
+ *  that key's I, IV and V (Am F C G has no Dm or E: it's C major's vi-IV-I-V). */
+function bestReduction(chords: string[], key: SongKey | null) {
+  const triads = chords.map(toTriad).filter((t): t is Triad => !!t);
+  let k = key;
+  if (key) {
+    const rel = relativeKey(key);
+    if (primariesPlayed(triads, rel) > primariesPlayed(triads, key)) k = rel;
+  }
+  const primary = primaryChords(chords, k);
+  return { key: k, primary, extra: leanedOnChord(chords, primary) };
+}
+
+/** The one chord outside I-IV-V that a song relies on (e.g. vi in vi-IV-I-V), if any:
+ *  the most used non-primary chord, when it is at least 20% of the song's chords. */
+export function leanedOnChord(chords: string[], primary: Triad[]): Triad | null {
+  const triads = chords.map(toTriad).filter((t): t is Triad => !!t);
+  if (!triads.length) return null;
+  const counts: { t: Triad; n: number }[] = [];
+  for (const t of triads) {
+    if (primary.some((p) => same(p, t))) continue;
+    const e = counts.find((x) => same(x.t, t));
+    if (e) e.n++;
+    else counts.push({ t, n: 1 });
+  }
+  counts.sort((a, b) => b.n - a.n);
+  return counts[0] && counts[0].n / triads.length >= EXTRA_SHARE ? counts[0].t : null;
+}
+
 /** Fold any chord onto the I, IV or V with the same job (home / lead-in / tension). */
 export function toPrimary(t: Triad, primary: Triad[], key: SongKey | null): Triad {
   if (key && primary.length === 3) {
@@ -162,6 +211,7 @@ export type ChordMapper = {
   capo: number; // guitar easy mode
   keyShift: number; // piano/ukulele easy mode: semitones moved to the easy key
   three: string[]; // the song's I, IV, V as shown
+  extra: string | null; // a 4th chord kept because the song leans on it (>= 20% of chords)
 };
 
 /** One function turning each written chord into what the player should see. */
@@ -169,24 +219,33 @@ export function buildChordMapper(chords: string[], o: MapperOptions): ChordMappe
   const moved = chords.map((c) => transposeChord(c, o.transpose));
   const key = detectKey(moved);
   const flats = usesFlats(key);
-  const primary = o.three ? primaryChords(moved, key) : [];
+  // 1-4-5 reduction: read the song in its key or the relative major/minor (Am F C G is
+  // both), keeping whichever reading preserves the most notes of the original chords
+  const plan = o.three ? bestReduction(moved, key) : { primary: [] as Triad[], extra: null, key };
+  const primary = plan.primary;
+  const extra = plan.extra;
+  const fnKey = plan.key;
 
   // step 1: what the chord is (after transpose, and the 1-4-5 reduction / simplification)
   const base = (chord: string): string => {
     if (!o.transpose && !o.three && !o.easy) return chord; // exactly as written
     const c = transposeChord(chord, o.transpose);
     const t = toTriad(c);
-    if (o.three && t) return triadName(toPrimary(t, primary, key), flats);
+    if (o.three && t) return triadName(extra && same(t, extra) ? extra : toPrimary(t, primary, fnKey), flats);
     if (o.easy) return t ? triadName(t, flats) : c;
     return respell(c, flats);
   };
-  const baseNames = chords.map(base);
-
-  // step 2: easy shapes
+  // step 2: easy shapes. The capo / easy key depends only on the song (and manual
+  // transpose), never on the 1·4·5 switch, so turning 1·4·5 on just removes chords
+  // instead of changing every shape.
+  const songTriads = moved.map((c) => {
+    const t = toTriad(c);
+    return t ? triadName(t) : c;
+  });
   let capo = 0;
   let keyShift = 0;
-  if (o.easy && o.instrument === 'guitar') capo = capoFor(baseNames);
-  else if (o.easy) keyShift = findEasiestTranspose(baseNames);
+  if (o.easy && o.instrument === 'guitar') capo = capoFor(songTriads);
+  else if (o.easy) keyShift = findEasiestTranspose(songTriads);
 
   const map = (chord: string): string => {
     const name = base(chord);
@@ -197,7 +256,11 @@ export function buildChordMapper(chords: string[], o: MapperOptions): ChordMappe
     return triadName(shift(t, keyShift), usesFlats(key && { ...key, tonic: (key.tonic + keyShift) % 12 }));
   };
 
-  return { map, key, capo, keyShift, three: primary.map((t) => map(triadName(t))) };
+  return {
+    map, key, capo, keyShift,
+    three: primary.map((t) => map(triadName(t))),
+    extra: extra ? map(triadName(extra)) : null,
+  };
 }
 
 /** Spell a chord's root with flats (keeps the rest of the name). */

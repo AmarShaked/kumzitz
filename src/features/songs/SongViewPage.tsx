@@ -18,6 +18,9 @@ const INSTRUMENTS: { value: Instrument; label: string }[] = [
   { value: 'piano', label: 'פסנתר' },
 ];
 
+// Keep left-to-right labels (1·4·5, I · IV · V) in order inside Hebrew text.
+const ltr = (text: string) => `\u2066${text}\u2069`;
+
 export default function SongViewPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -73,7 +76,7 @@ export default function SongViewPage() {
     : mapper.keyShift ? 'הועבר לסולם קל' : '';
   // everything that changes what's shown, carried into performance mode
   const activeModes = [
-    three && '3 אקורדים',
+    three && ltr(mapper.extra ? `1·4·5 + ${mapper.extra}` : '1·4·5'),
     easy && (easyBadge || 'קל לנגינה'),
     transpose !== 0 && `טרנספוזיציה ${transpose > 0 ? '+' : ''}${transpose}`,
   ].filter(Boolean) as string[];
@@ -169,7 +172,7 @@ export default function SongViewPage() {
       <div className="flex items-center gap-2 sm:gap-3 flex-wrap print:hidden">
         <TransposeControls transpose={transpose} onTransposeChange={setTranspose} originalKey={song.originalKey} />
         <Button variant={three ? 'default' : 'secondary'} size="sm" aria-pressed={three} onClick={() => setThree(!three)}>
-          3 אקורדים
+          <span dir="ltr">1·4·5</span>
         </Button>
         <Button variant={easy ? 'default' : 'secondary'} size="sm" aria-pressed={easy} onClick={() => setEasy(!easy)}>
           קל לנגינה
@@ -246,7 +249,10 @@ export default function SongViewPage() {
         </div>
       </div>
 
-      <ChordStrip chords={three && mapper.three.length ? mapper.three : shownChords} title={three ? 'שלושת האקורדים (I · IV · V)' : 'האקורדים בשיר'} />
+      <ChordStrip
+        chords={three && mapper.three.length ? [...mapper.three, ...(mapper.extra ? [mapper.extra] : [])] : shownChords}
+        title={!three ? 'האקורדים בשיר'
+          : mapper.extra ? `${ltr(`I · IV · V + ${mapper.extra}`)} (השיר נשען עליו)` : ltr('I · IV · V')} />
 
       <div ref={songContentRef} className="rounded-lg bg-muted/30 p-4 sm:p-6">
         <SongRenderer content={song.content} mapChord={mapper.map} fontSize={fontSize} onChordHover={onChordHover} onChordLeave={onChordLeave} />

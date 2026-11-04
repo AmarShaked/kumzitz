@@ -38,7 +38,18 @@ The shapes are always visible, and the app installs on the phone and works offli
      IV and V keep the song's own quality when the song uses that chord (for example a
      minor v), otherwise the textbook one (minor key: iv minor, V major). Chords outside
      those lists go to the nearest of the three by shared notes. With no key, the song's 3
-     most-used chords are used;
+     most-used chords are used.
+
+     Two refinements:
+     - **Smart 4th chord:** the most-used chord outside I-IV-V is kept as is when it makes
+       up at least 20% of the song's chords (for example vi in vi-IV-I-V).
+     - **Relative-key reading:** the song is reduced in the relative major/minor when that
+       key's I, IV and V appear more often in the song than the detected key's do (Am F C G
+       is C major's vi-IV-I-V).
+
+     Measured, as notes of the original chords kept: Hashivenu 93%, Zusha 91%, pop loops
+     100%, Andalusian 93%. With plain 1-4-5 these were 83%, 82%, 67% and 78%. The button
+     is labelled "1·4·5";
   3. easy mode:
      - guitar: the capo fret 0–7 that minimises shape difficulty (open = 0, F/Bm = 2,
        other barres = 3, plus 0.15 per fret; B is shown as B7);
