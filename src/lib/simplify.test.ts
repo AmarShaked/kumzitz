@@ -153,5 +153,22 @@ describe('buildChordMapper', () => {
       for (const c of new Set(song.map(both.map))) expect(easyShapes).toContain(c);
     }
   });
+
+  it('ukulele gets a capo with easy ukulele shapes and keeps the key', () => {
+    const song = 'Db Gb Ab Bbm Db Gb Ab Db'.split(' ');
+    const m = buildChordMapper(song, { transpose: 0, three: false, easy: true, instrument: 'ukulele' });
+    expect(m.keyShift).toBe(0);
+    expect(m.capo).toBeGreaterThan(0);
+    const easyUke = new Set(['C', 'Am', 'F', 'G', 'Dm', 'A', 'D', 'Em', 'Gm', 'A7', 'C7', 'D7', 'E7', 'G7']);
+    for (const c of new Set(song.map(m.map))) expect(easyUke).toContain(c);
+  });
+
+  it('piano moves to an easy key and says which key', () => {
+    const song = 'Db Gb Ab Bbm Db Gb Ab Db'.split(' ');
+    const m = buildChordMapper(song, { transpose: 0, three: false, easy: true, instrument: 'piano' });
+    expect(m.capo).toBe(0);
+    expect(m.keyShift).not.toBe(0);
+    expect(m.easyKey).toBe(m.map('Db')); // the new home chord is the new key
+  });
 });
 

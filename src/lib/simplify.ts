@@ -182,23 +182,32 @@ export function toPrimary(t: Triad, primary: Triad[], key: SongKey | null): Tria
   return nearestOf(t, primary, key);
 }
 
-// Guitar shape difficulty: open chords are free, small barres cost 2, other barres 3.
-const OPEN = new Set(['C', 'D', 'E', 'G', 'A', 'Am', 'Dm', 'Em', 'B7']);
+// Shape difficulty per instrument: open/easy shapes are free, a few common harder shapes
+// cost 2, everything else (barre-type) costs 3.
+const EASY_SHAPES: Record<'guitar' | 'ukulele', Set<string>> = {
+  guitar: new Set(['C', 'D', 'E', 'G', 'A', 'Am', 'Dm', 'Em', 'B7']),
+  ukulele: new Set(['C', 'Am', 'F', 'G', 'Dm', 'A', 'D', 'Em', 'Gm', 'B7']),
+};
+const MEDIUM_SHAPES: Record<'guitar' | 'ukulele', Set<string>> = {
+  guitar: new Set(['F', 'Bm']),
+  ukulele: new Set(['Bb', 'Bm', 'E', 'Cm']),
+};
 const shapeOf = (t: Triad) => {
   const n = triadName(t);
-  return n === 'B' ? 'B7' : n; // open B7 is the standard easy stand-in for a B barre
+  return n === 'B' ? 'B7' : n; // B7 is the standard easy stand-in for B (guitar and ukulele)
 };
-const shapeCost = (t: Triad) => (OPEN.has(shapeOf(t)) ? 0 : shapeOf(t) === 'F' || shapeOf(t) === 'Bm' ? 2 : 3);
+const shapeCost = (t: Triad, inst: 'guitar' | 'ukulele') =>
+  EASY_SHAPES[inst].has(shapeOf(t)) ? 0 : MEDIUM_SHAPES[inst].has(shapeOf(t)) ? 2 : 3;
 const shift = (t: Triad, n: number): Triad => ({ root: (t.root + n + 120) % 12, q: t.q });
 
-/** Capo fret (0–7) that makes these chords easiest to finger. */
-export function capoFor(chords: string[]): number {
+/** Capo fret (0–7) that makes these chords easiest to finger on guitar or ukulele. */
+export function capoFor(chords: string[], instrument: 'guitar' | 'ukulele' = 'guitar'): number {
   const triads = chords.map(toTriad).filter((t): t is Triad => !!t);
   const unique = triads.filter((t, i) => triads.findIndex((u) => same(u, t)) === i);
   let best = 0;
   let bestCost = Infinity;
   for (let capo = 0; capo <= 7; capo++) {
-    const cost = unique.reduce((s, t) => s + shapeCost(shift(t, -capo)), 0) + 0.15 * capo;
+    const cost = unique.reduce((s, t) => s + shapeCost(shift(t, -capo), instrument), 0) + 0.15 * capo;
     if (cost < bestCost - 1e-9) { best = capo; bestCost = cost; }
   }
   return best;
@@ -208,8 +217,9 @@ export type MapperOptions = { transpose: number; three: boolean; easy: boolean; 
 export type ChordMapper = {
   map: (chord: string) => string;
   key: SongKey | null; // key after manual transposition (what it sounds like)
-  capo: number; // guitar easy mode
-  keyShift: number; // piano/ukulele easy mode: semitones moved to the easy key
+  capo: number; // guitar/ukulele easy mode
+  keyShift: number; // piano easy mode: semitones moved to the easy key (0–11)
+  easyKey: string | null; // piano easy mode: the key it now sounds in
   three: string[]; // the song's I, IV, V as shown
   extra: string | null; // a 4th chord kept because the song leans on it (>= 20% of chords)
 };
@@ -244,20 +254,25 @@ export function buildChordMapper(chords: string[], o: MapperOptions): ChordMappe
   });
   let capo = 0;
   let keyShift = 0;
-  if (o.easy && o.instrument === 'guitar') capo = capoFor(songTriads);
+  const fretted = o.instrument === 'guitar' || o.instrument === 'ukulele';
+  if (o.easy && fretted) capo = capoFor(songTriads, o.instrument as 'guitar' | 'ukulele');
   else if (o.easy) keyShift = findEasiestTranspose(songTriads);
+  const shiftedKey = key && keyShift ? { ...key, tonic: (key.tonic + keyShift) % 12 } : null;
 
   const map = (chord: string): string => {
     const name = base(chord);
     if (!o.easy) return name;
     const t = toTriad(name);
     if (!t) return name;
-    if (o.instrument === 'guitar') return shapeOf(shift(t, -capo));
-    return triadName(shift(t, keyShift), usesFlats(key && { ...key, tonic: (key.tonic + keyShift) % 12 }));
+    if (fretted) return shapeOf(shift(t, -capo));
+    return triadName(shift(t, keyShift), usesFlats(shiftedKey ?? key));
   };
 
   return {
     map, key, capo, keyShift,
+    easyKey: shiftedKey
+      ? triadName({ root: shiftedKey.tonic, q: shiftedKey.mode === 'major' ? 'maj' : 'min' }, usesFlats(shiftedKey))
+      : null,
     three: primary.map((t) => map(triadName(t))),
     extra: extra ? map(triadName(extra)) : null,
   };

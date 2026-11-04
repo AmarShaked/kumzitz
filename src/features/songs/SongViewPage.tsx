@@ -71,9 +71,12 @@ export default function SongViewPage() {
     return seen;
   }, [allChords, mapper]);
 
+  // piano: say which key it moved to (you sing in that key), as a signed shift −6…+5
+  const signedShift = mapper.keyShift > 6 ? mapper.keyShift - 12 : mapper.keyShift;
   const easyBadge = !easy ? ''
-    : instrument === 'guitar' ? (mapper.capo ? `קאפו ${mapper.capo}` : 'בלי קאפו')
-    : mapper.keyShift ? 'הועבר לסולם קל' : '';
+    : instrument !== 'piano' ? (mapper.capo ? `קאפו ${mapper.capo}` : 'בלי קאפו')
+    : mapper.easyKey ? `סולם ${ltr(mapper.easyKey)} (${ltr(`${signedShift > 0 ? '+' : ''}${signedShift}`)})`
+    : 'הסולם כבר קל';
   // everything that changes what's shown, carried into performance mode
   const activeModes = [
     three && ltr(mapper.extra ? `1·4·5 + ${mapper.extra}` : '1·4·5'),
