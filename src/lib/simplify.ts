@@ -42,6 +42,25 @@ function diatonic(t: Triad, tonic: number, mode: 'major' | 'minor'): boolean {
   return table[deg] === t.q;
 }
 
+function keyOf(tonic: number, mode: 'major' | 'minor'): SongKey {
+  const k = { tonic, mode, name: '' } as SongKey;
+  k.name = triadName({ root: tonic, q: mode === 'major' ? 'maj' : 'min' }, usesFlats(k));
+  return k;
+}
+
+/** "Dm" / "Db" / "C#m" / "Bbm" → key; null when empty or not a key name. */
+export function parseKey(name: string): SongKey | null {
+  const m = name.trim().match(/^([A-G][b#]?)(m?)$/);
+  if (!m || PC[m[1]] === undefined) return null;
+  return keyOf(PC[m[1]], m[2] ? 'minor' : 'major');
+}
+
+/** All 24 keys, spelled the way detectKey names them. */
+export const KEY_NAMES: string[] = [
+  ...[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map((t) => keyOf(t, 'major').name),
+  ...[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11].map((t) => keyOf(t, 'minor').name),
+];
+
 /** Key of a song from its chord list: diatonic fit, how much the tonic chord is used,
  *  and first/last chord (lightly: many songs end on a half cadence). */
 export function detectKey(chords: string[]): SongKey | null {
@@ -145,10 +164,10 @@ function primariesPlayed(triads: Triad[], k: SongKey): number {
 
 /** Read the song in its key, or in the relative major/minor when the song plays more of
  *  that key's I, IV and V (Am F C G has no Dm or E: it's C major's vi-IV-I-V). */
-function bestReduction(chords: string[], key: SongKey | null) {
+function bestReduction(chords: string[], key: SongKey | null, allowRelative: boolean) {
   const triads = chords.map(toTriad).filter((t): t is Triad => !!t);
   let k = key;
-  if (key) {
+  if (key && allowRelative) {
     const rel = relativeKey(key);
     if (primariesPlayed(triads, rel) > primariesPlayed(triads, key)) k = rel;
   }
@@ -213,7 +232,15 @@ export function capoFor(chords: string[], instrument: 'guitar' | 'ukulele' = 'gu
   return best;
 }
 
-export type MapperOptions = { transpose: number; three: boolean; easy: boolean; instrument: Instrument };
+export type MapperOptions = {
+  transpose: number;
+  three: boolean;
+  easy: boolean;
+  instrument: Instrument;
+  /** The song's selected key ("Dm", "Db", "C#m"…), before manual transposition.
+   *  When set, 1·4·5 works in exactly this key; otherwise the key is detected. */
+  songKey?: string;
+};
 export type ChordMapper = {
   map: (chord: string) => string;
   key: SongKey | null; // key after manual transposition (what it sounds like)
@@ -227,11 +254,13 @@ export type ChordMapper = {
 /** One function turning each written chord into what the player should see. */
 export function buildChordMapper(chords: string[], o: MapperOptions): ChordMapper {
   const moved = chords.map((c) => transposeChord(c, o.transpose));
-  const key = detectKey(moved);
+  const selected = o.songKey ? parseKey(o.songKey) : null;
+  const key = selected ? keyOf((selected.tonic + o.transpose + 120) % 12, selected.mode) : detectKey(moved);
   const flats = usesFlats(key);
   // 1-4-5 reduction: read the song in its key or the relative major/minor (Am F C G is
   // both), keeping whichever reading preserves the most notes of the original chords
-  const plan = o.three ? bestReduction(moved, key) : { primary: [] as Triad[], extra: null, key };
+  // a key the user chose is used as is; only a detected key may be re-read as its relative
+  const plan = o.three ? bestReduction(moved, key, !selected) : { primary: [] as Triad[], extra: null, key };
   const primary = plan.primary;
   const extra = plan.extra;
   const fnKey = plan.key;
@@ -259,22 +288,24 @@ export function buildChordMapper(chords: string[], o: MapperOptions): ChordMappe
   else if (o.easy) keyShift = findEasiestTranspose(songTriads);
   const shiftedKey = key && keyShift ? { ...key, tonic: (key.tonic + keyShift) % 12 } : null;
 
-  const map = (chord: string): string => {
-    const name = base(chord);
+  // step 2 applied to a chord name that is already in the song's (transposed) key
+  const finish = (name: string): string => {
     if (!o.easy) return name;
     const t = toTriad(name);
     if (!t) return name;
     if (fretted) return shapeOf(shift(t, -capo));
     return triadName(shift(t, keyShift), usesFlats(shiftedKey ?? key));
   };
+  const map = (chord: string): string => finish(base(chord));
 
   return {
     map, key, capo, keyShift,
     easyKey: shiftedKey
       ? triadName({ root: shiftedKey.tonic, q: shiftedKey.mode === 'major' ? 'maj' : 'min' }, usesFlats(shiftedKey))
       : null,
-    three: primary.map((t) => map(triadName(t))),
-    extra: extra ? map(triadName(extra)) : null,
+    // primary/extra are already transposed: only finish them (don't transpose twice)
+    three: primary.map((t) => finish(triadName(t, flats))),
+    extra: extra ? finish(triadName(extra, flats)) : null,
   };
 }
 

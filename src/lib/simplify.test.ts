@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { detectKey, primaryChords, toPrimary, buildChordMapper, toTriad, capoFor } from './simplify';
+import { detectKey, primaryChords, toPrimary, buildChordMapper, toTriad, capoFor, parseKey, KEY_NAMES } from './simplify';
 
 // A typical Israeli minor-key progression, written the way tab4u writes it
 const MINOR_SONG = ['Dm', 'Am', 'Dm', 'Am', 'Dm', 'F', 'Am', 'Gm', 'F', 'Dm', 'Bb', 'Am', 'Dm', 'A7', 'Dm'];
@@ -169,6 +169,43 @@ describe('buildChordMapper', () => {
     expect(m.capo).toBe(0);
     expect(m.keyShift).not.toBe(0);
     expect(m.easyKey).toBe(m.map('Db')); // the new home chord is the new key
+  });
+});
+
+describe('selected key', () => {
+  it('parses key names in any spelling', () => {
+    expect(parseKey('Dm')).toMatchObject({ tonic: 2, mode: 'minor' });
+    expect(parseKey('Db')).toMatchObject({ tonic: 1, mode: 'major' });
+    expect(parseKey('C#')).toMatchObject({ tonic: 1, mode: 'major' });
+    expect(parseKey('Bbm')).toMatchObject({ tonic: 10, mode: 'minor' });
+    expect(parseKey('')).toBeNull();
+    expect(parseKey('xyz')).toBeNull();
+  });
+
+  it('offers all 24 keys', () => {
+    expect(KEY_NAMES).toHaveLength(24);
+    for (const k of KEY_NAMES) expect(parseKey(k)).not.toBeNull();
+  });
+
+  it('1·4·5 works in the selected key, not a re-detected one', () => {
+    const loop = 'Am F C G Am F C G'.split(' ');
+    const inC = buildChordMapper(loop, { transpose: 0, three: true, easy: false, instrument: 'guitar', songKey: 'C' });
+    expect(inC.key?.name).toBe('C');
+    expect(inC.three).toEqual(['C', 'F', 'G']);
+    const inAm = buildChordMapper(loop, { transpose: 0, three: true, easy: false, instrument: 'guitar', songKey: 'Am' });
+    expect(inAm.key?.name).toBe('Am');
+    expect(inAm.three).toEqual(['Am', 'Dm', 'E']); // the chosen key's i, iv, V
+  });
+
+  it('the selected key follows manual transposition', () => {
+    const m = buildChordMapper(MINOR_SONG, { transpose: 2, three: true, easy: false, instrument: 'guitar', songKey: 'Dm' });
+    expect(m.key?.name).toBe('Em');
+    expect(m.three).toEqual(['Em', 'Am', 'Bm']);
+  });
+
+  it('chords already in the selected key\'s I, IV, V are never changed', () => {
+    const m = buildChordMapper(MINOR_SONG, { transpose: 0, three: true, easy: false, instrument: 'guitar', songKey: 'Dm' });
+    for (const c of ['Dm', 'Gm', 'Am']) expect(m.map(c)).toBe(c);
   });
 });
 

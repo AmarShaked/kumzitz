@@ -5,8 +5,9 @@ import { Button } from '@/components/ui/button';
 import ChordPicker from './ChordPicker';
 import Tab4uImport from './Tab4uImport';
 
-const KEYS = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B',
-              'Am', 'Bm', 'Cm', 'Dm', 'Em', 'Fm', 'Gm'];
+import { KEY_NAMES } from '../../lib/simplify';
+
+const KEYS = KEY_NAMES; // all 24 keys, spelled like the importer names them
 
 export default function EditorToolbar() {
   const { state, setTitle, setArtist, setOriginalKey, setBpm, insertChordAtCursor } = useEditor();
@@ -23,7 +24,8 @@ export default function EditorToolbar() {
         <select value={state.originalKey} onChange={(e) => setOriginalKey(e.target.value)}
           className="rounded-md border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
           <option value="">סולם</option>
-          {KEYS.map((k) => <option key={k} value={k}>{k}</option>)}
+          {(KEYS.includes(state.originalKey) || !state.originalKey ? KEYS : [state.originalKey, ...KEYS])
+            .map((k) => <option key={k} value={k}>{k}</option>)}
         </select>
         <Input type="number" placeholder="BPM" value={state.bpm} onChange={(e) => setBpm(e.target.value)} className="w-20" />
         <div className="relative">

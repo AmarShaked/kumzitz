@@ -1,13 +1,13 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { useSong, useDeleteSong } from './hooks/useSongs';
+import { useSong, useDeleteSong, useUpdateSong } from './hooks/useSongs';
 import SongRenderer from '../../components/SongRenderer';
 import TransposeControls from '../transpose/TransposeControls';
 import { useChordTooltip, ChordTooltipOverlay } from '../chords/ChordTooltip';
 import PerformanceMode from '../performance/PerformanceMode';
 import { Button } from '@/components/ui/button';
 import { parseChordPro } from '../../lib/chordpro';
-import { buildChordMapper } from '../../lib/simplify';
+import { buildChordMapper, KEY_NAMES } from '../../lib/simplify';
 import ChordStrip from '../chords/ChordStrip';
 import { Settings } from 'lucide-react';
 import { useInstrument, type Instrument } from '@/hooks/useInstrument';
@@ -26,6 +26,7 @@ export default function SongViewPage() {
   const navigate = useNavigate();
   const { data: song, isLoading, error } = useSong(id!);
   const { mutateAsync: removeSong } = useDeleteSong();
+  const { mutate: saveSong } = useUpdateSong();
   const [transpose, setTranspose] = useState(0);
   const [three, setThree] = useState(() => localStorage.getItem('kumzitz-three') === '1');
   const [easy, setEasy] = useState(() => localStorage.getItem('kumzitz-easy') === '1');
@@ -57,8 +58,8 @@ export default function SongViewPage() {
   }, [three, easy]);
 
   const mapper = useMemo(
-    () => buildChordMapper(allChords, { transpose, three, easy, instrument }),
-    [allChords, transpose, three, easy, instrument],
+    () => buildChordMapper(allChords, { transpose, three, easy, instrument, songKey: song?.originalKey }),
+    [allChords, transpose, three, easy, instrument, song?.originalKey],
   );
 
   // the chords you'll play, in the order they first appear
@@ -156,7 +157,20 @@ export default function SongViewPage() {
           <h1 className="text-2xl sm:text-3xl font-bold print:text-xl print:mb-0">{song.title}</h1>
           <p className="text-base sm:text-lg text-muted-foreground mt-1 print:text-sm print:mt-0 print:text-black/60">{song.artist}</p>
           <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground print:hidden">
-            {song.originalKey ? <span>סולם: {song.originalKey}</span> : null}
+            <label className="flex items-center gap-1">
+              סולם:
+              <select
+                value={song.originalKey}
+                onChange={(e) => saveSong({ id: song.id, data: { originalKey: e.target.value } })}
+                className="rounded-md border border-input bg-background px-1.5 py-0.5 text-sm text-foreground"
+                dir="ltr"
+                aria-label="הסולם של השיר"
+              >
+                <option value="">זיהוי אוטומטי</option>
+                {(KEY_NAMES.includes(song.originalKey) || !song.originalKey ? KEY_NAMES : [song.originalKey, ...KEY_NAMES])
+                  .map((k) => <option key={k} value={k}>{k}</option>)}
+              </select>
+            </label>
             {song.bpm ? <span>BPM: {song.bpm}</span> : null}
           </div>
         </div>
@@ -253,9 +267,11 @@ export default function SongViewPage() {
       </div>
 
       <ChordStrip
-        chords={three && mapper.three.length ? [...mapper.three, ...(mapper.extra ? [mapper.extra] : [])] : shownChords}
+        chords={three && mapper.three.length
+          ? [...mapper.three, ...(mapper.extra ? [mapper.extra] : [])].filter((c) => shownChords.includes(c)) // only chords you play
+          : shownChords}
         title={!three ? 'האקורדים בשיר'
-          : mapper.extra ? `${ltr(`I · IV · V + ${mapper.extra}`)} (השיר נשען עליו)` : ltr('I · IV · V')} />
+          : `${ltr(`I · IV · V${mapper.extra ? ` + ${mapper.extra}` : ''}`)} בסולם ${ltr(mapper.key?.name ?? '?')}${mapper.extra ? ' (השיר נשען עליו)' : ''}`} />
 
       <div ref={songContentRef} className="rounded-lg bg-muted/30 p-4 sm:p-6">
         <SongRenderer content={song.content} mapChord={mapper.map} fontSize={fontSize} onChordHover={onChordHover} onChordLeave={onChordLeave} />
